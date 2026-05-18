@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from "react"
-import DatePicker from "./ui/DatePicker";
+import DatePicker from "../ui/DatePicker";
+import DestinationInput from "./DestinationInput";
 
 function TripForm() {
     const [destination, setDestination] = useState("");
@@ -10,11 +11,12 @@ function TripForm() {
 
     return (
         <div className="flex flex-col gap-4 w-full max-w-md mt-8">
-            <input 
+            {/* <input 
                 className="border p-3 rounded-lg"
                 placeholder="Where do you want to go?"
                 value={destination} 
-                onChange={e => setDestination(e.target.value)} />
+                onChange={e => setDestination(e.target.value)} /> */}
+            <DestinationInput value={destination} onChange={setDestination} />
             {/* <div className="flex gap-4 w-full">
                 <label className="text-sm text-gray-500">Start Date</label> 
                 <input 

@@ -1,3 +1,5 @@
+import Map from "@/components/map/Map"
+
 async function Trip({ searchParams } : { 
     searchParams: Promise<{ 
         destination: string 
@@ -12,10 +14,13 @@ async function Trip({ searchParams } : {
 
     
     return (
-        <main className="min-h-screen flex flex-col bg-[#F9F9F9]">
-            <div className="p-8">
+        <main className="h-screen flex bg-[#F9F9F9]">
+            <div className="p-8 w-1/3">
                 <h1 className="text-4xl font-bold">The next station is {destination} LOL</h1>
                 <p> From {start.toDateString()} to {end.toDateString()}</p>
+            </div>
+            <div className="w-2/3 h-full">
+                <Map destination={destination} />
             </div>
         </main>
     )

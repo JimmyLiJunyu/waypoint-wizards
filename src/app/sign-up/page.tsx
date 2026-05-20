@@ -1,7 +1,10 @@
-
+import SignUpForm from "@/components/login/SignUpForm";
 
 export default function SignUp() {
-    return (
-        <h1>TODO: Sign Up Page</h1>
-    )
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-start pt-[20vh] bg-[#F9F9F9]">
+      <h1 className="color-black text-4xl font-bold">Sign Up Now!</h1>
+      <SignUpForm />
+    </main>
+  );
 }

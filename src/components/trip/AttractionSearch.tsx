@@ -7,6 +7,7 @@ interface Attraction {
     lng: number;
     rating: number;
     address: string;
+    reviews: number;
     placeId: string;
 }
 

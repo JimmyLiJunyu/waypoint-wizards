@@ -1,4 +1,6 @@
-import Map from "@/components/map/Map"
+import Map from "@/components/map/Map";
+import TripClient from "@/components/trip/TripClient";
+
 
 async function Trip({ searchParams } : { 
     searchParams: Promise<{ 
@@ -14,15 +16,11 @@ async function Trip({ searchParams } : {
 
     
     return (
-        <main className="h-screen flex bg-[#F9F9F9]">
-            <div className="p-8 w-1/3">
-                <h1 className="text-4xl font-bold">The next station is {destination} LOL</h1>
-                <p> From {start.toDateString()} to {end.toDateString()}</p>
-            </div>
-            <div className="w-2/3 h-full">
-                <Map destination={destination} />
-            </div>
-        </main>
+        <TripClient
+            destination={destination}
+            startDate={startDate}
+            endDate={endDate}
+        />
     )
 }
 

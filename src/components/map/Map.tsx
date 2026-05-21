@@ -8,6 +8,7 @@ interface Attraction {
     lng: number;
     rating: number;
     address: string;
+    reviews: number;
     placeId: string;
 }
 
@@ -48,9 +49,9 @@ function MapInner({ center, attractions }: {
                 onCloseClick={() => setSelected(null)}
             >
                 <div>
-                    <h3> {selected.name} </h3>
+                    <h2> {selected.name} </h2>
                     <p className="text-gray-500 text-sm">{selected.address}</p>
-                    <p className="text-sm">Rating: {selected.rating} ⭐</p>
+                    <p className="text-sm">Rating: {selected.rating} ⭐ ({selected.reviews} reviews)</p>
                 </div>
             </InfoWindow>
         )}

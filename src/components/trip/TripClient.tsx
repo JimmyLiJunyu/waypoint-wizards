@@ -10,6 +10,7 @@ interface Attraction {
     lng: number;
     rating: number;
     address: string;
+    reviews: number;
     placeId: string;
 }
 
@@ -40,7 +41,7 @@ function TripClient({ destination, startDate, endDate }: {
     return (
         <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
             <main className="flex h-screen bg-[#F9F9F9]">
-                <div className="p-8 w-1/3 overflow-y-auto">
+                <div className="p-8 w-1/3 flex flex-col">
                     <h1 className="text-4xl font-bold">The Next Station is {destination} LOL</h1>
                     <p className="text-gray-500 mt-2"> {start.toDateString()} → {end.toDateString()} </p>
                     <AttractionSearch
@@ -48,12 +49,12 @@ function TripClient({ destination, startDate, endDate }: {
                         lng={center.lng}
                         onResults={setAttractions}
                     />
-                    <div className="mt-4 flex flex-col gap-2">
+                    <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
                         {attractions.map((attraction) => (
                             <div key={attraction.placeId} className="border p-3 rounded-lg bg-white">
                                 <h3 className="font-semibold">{attraction.name}</h3>
                                 <p className="text-gray-500 text-sm">{attraction.address}</p>
-                                <p className="text-sm">Rating: {attraction.rating} ⭐</p>
+                                <p className="text-sm">Rating: {attraction.rating} ⭐ ({attraction.reviews} reviews)</p>
                             </div>
                         ))}
                     </div>

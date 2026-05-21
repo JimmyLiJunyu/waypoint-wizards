@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     lng: place.geometry.location.lng,
     rating: place.rating,
     address: place.formatted_address,
+    reviews: place.user_ratings_total ?? 0,
     placeId: place.place_id
   }))
 

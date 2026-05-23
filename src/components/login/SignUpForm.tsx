@@ -73,18 +73,23 @@ function SignUpForm() {
           }}
           className="border p-2 rounded"
         />
+
+        <input
+          type="password"
+          value={verifyPassword}
+          placeholder="Verify Password"
+          onChange={(e) => {
+            setVerifyPassword(e.target.value);
+            if (e.target.value != password) setValid(false);
+            else setValid(true);
+          }}
+          className="border p-2 rounded"
+        />
         {!valid && (
           <div className="bg-red-50 text-red-600 p-2 rounded text-sm border border-red-200">
             Passwords do not match!
           </div>
         )}
-        <input
-          type="password"
-          value={verifyPassword}
-          placeholder="Verify Password"
-          onChange={(e) => setVerifyPassword(e.target.value)}
-          className="border p-2 rounded"
-        />
 
         <button
           type="submit"

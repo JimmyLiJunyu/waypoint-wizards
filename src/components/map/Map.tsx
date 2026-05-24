@@ -22,12 +22,14 @@ function MapInner({ center, attractions, selectedAttraction, onSelectAttraction 
     const [selected, setSelected] = useState<Attraction | null>(null);
     const map = useMap();
 
+    // selecting attraction on the card list will pan to coordinates of attraction on the map
     useEffect(() => {
         if (map && selectedAttraction) {
             map.panTo({ lat: selectedAttraction.lat, lng: selectedAttraction.lng })
         }
     }, [map, selectedAttraction]);
 
+    // map pans to coordinates of destination when loading
     useEffect(() => {
         if (map && center) {
             map.panTo(center);
@@ -45,12 +47,14 @@ function MapInner({ center, attractions, selectedAttraction, onSelectAttraction 
             className="w-full h-screen"
             mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
         >
+        {/* attraction markers */}
         {attractions.map((attraction) => (
             <AdvancedMarker
                 key={attraction.placeId}
                 position={{ lat: attraction.lat, lng: attraction.lng }}
                 onClick={() => onSelectAttraction(attraction)} />
         ))}
+        {/* info window shows upon selecting marker or selecting attraction card */}
         {selectedAttraction && (
             <InfoWindow
                 position={{ lat: selectedAttraction.lat, lng: selectedAttraction.lng }}
@@ -75,11 +79,12 @@ export default function MapComponent({ destination, attractions, center, selecte
     onSelectAttraction: (attraction: Attraction | null) => void;
  }) {
 
-  return (
-    <MapInner 
-        center={center} 
-        attractions={attractions} 
-        selectedAttraction={selectedAttraction} 
-        onSelectAttraction={onSelectAttraction}/>
-  )
+    // map rendering
+    return (
+        <MapInner 
+            center={center} 
+            attractions={attractions} 
+            selectedAttraction={selectedAttraction} 
+            onSelectAttraction={onSelectAttraction}/>
+    )
 }

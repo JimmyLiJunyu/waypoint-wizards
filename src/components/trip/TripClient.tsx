@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MapComponent from "../map/Map";
 import AttractionSearch from "./AttractionSearch";
 import { APIProvider } from "@vis.gl/react-google-maps";
@@ -24,6 +24,8 @@ function TripClient({ destination, startDate, endDate }: {
     const [center, setCenter] = useState({ lat: 1.3521, lng: 103.8198 });
     const start = new Date(startDate);
     const end = new Date(endDate);
+    const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
+    const cardRefs = useRef<{ [placeId: string]: HTMLDivElement | null }>({});
 
     useEffect(() => {
         const geocode = async () => {
@@ -38,6 +40,15 @@ function TripClient({ destination, startDate, endDate }: {
         geocode();
     }, [destination]);
 
+    useEffect(() => {
+        if (selectedAttraction) {
+            cardRefs.current[selectedAttraction.placeId]?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+            })
+        }
+    }, [selectedAttraction]);
+
     return (
         <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
             <main className="flex h-screen bg-[#F9F9F9]">
@@ -51,7 +62,13 @@ function TripClient({ destination, startDate, endDate }: {
                     />
                     <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
                         {attractions.map((attraction) => (
-                            <div key={attraction.placeId} className="border p-3 rounded-lg bg-white">
+                            <div key={attraction.placeId} ref={el => { cardRefs.current[attraction.placeId] = el }} 
+                                className={`border p-3 rounded-lg bg-white cursor-pointer 
+                                    transition-colors ${selectedAttraction?.placeId == attraction.placeId
+                                    ? 'border-red-500 bg-red-50'
+                                    : 'hover:bg-gray-50'
+                                }`}
+                                onClick={() => setSelectedAttraction(attraction)}>
                                 <h3 className="font-semibold">{attraction.name}</h3>
                                 <p className="text-gray-500 text-sm">{attraction.address}</p>
                                 <p className="text-sm">Rating: {attraction.rating} ⭐ ({attraction.reviews} reviews)</p>
@@ -60,7 +77,12 @@ function TripClient({ destination, startDate, endDate }: {
                     </div>
                 </div>
                 <div className="w-2/3 h-full">
-                    <MapComponent destination={destination} attractions={attractions} center={center} />
+                    <MapComponent 
+                        destination={destination} 
+                        attractions={attractions} 
+                        center={center} 
+                        selectedAttraction={selectedAttraction} 
+                        onSelectAttraction={setSelectedAttraction}/>
                 </div>
             </main>
         </APIProvider>

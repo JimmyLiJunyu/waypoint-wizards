@@ -12,13 +12,21 @@ interface Attraction {
     placeId: string;
 }
 
-function MapInner({ center, attractions }: { 
+function MapInner({ center, attractions, selectedAttraction, onSelectAttraction }: { 
     center: { lat: number, lng: number };
     attractions: Attraction[];
+    selectedAttraction: Attraction | null;
+    onSelectAttraction: (attraction: Attraction | null) => void;
 }) {
     const isLoaded = useApiIsLoaded();
     const [selected, setSelected] = useState<Attraction | null>(null);
     const map = useMap();
+
+    useEffect(() => {
+        if (map && selectedAttraction) {
+            map.panTo({ lat: selectedAttraction.lat, lng: selectedAttraction.lng })
+        }
+    }, [map, selectedAttraction]);
 
     useEffect(() => {
         if (map && center) {
@@ -41,17 +49,17 @@ function MapInner({ center, attractions }: {
             <Marker
                 key={attraction.placeId}
                 position={{ lat: attraction.lat, lng: attraction.lng }}
-                onClick={() => setSelected(attraction)} />
+                onClick={() => onSelectAttraction(attraction)} />
         ))}
-        {selected && (
+        {selectedAttraction && (
             <InfoWindow
-                position={{ lat: selected.lat, lng: selected.lng }}
-                onCloseClick={() => setSelected(null)}
+                position={{ lat: selectedAttraction.lat, lng: selectedAttraction.lng }}
+                onCloseClick={() => onSelectAttraction(null)}
             >
                 <div>
-                    <h2> {selected.name} </h2>
-                    <p className="text-gray-500 text-sm">{selected.address}</p>
-                    <p className="text-sm">Rating: {selected.rating} ⭐ ({selected.reviews} reviews)</p>
+                    <h2> {selectedAttraction.name} </h2>
+                    <p className="text-gray-500 text-sm">{selectedAttraction.address}</p>
+                    <p className="text-sm">Rating: {selectedAttraction.rating} ⭐ ({selectedAttraction.reviews} reviews)</p>
                 </div>
             </InfoWindow>
         )}
@@ -59,13 +67,19 @@ function MapInner({ center, attractions }: {
     )
 }
 
-export default function MapComponent({ destination, attractions, center }: { 
+export default function MapComponent({ destination, attractions, center, selectedAttraction, onSelectAttraction }: { 
     destination: string;
     attractions: Attraction[];
-    center: { lat: number, lng: number }
+    center: { lat: number, lng: number };
+    selectedAttraction: Attraction | null;
+    onSelectAttraction: (attraction: Attraction | null) => void;
  }) {
 
   return (
-    <MapInner center={center} attractions={attractions} />
+    <MapInner 
+        center={center} 
+        attractions={attractions} 
+        selectedAttraction={selectedAttraction} 
+        onSelectAttraction={onSelectAttraction}/>
   )
 }

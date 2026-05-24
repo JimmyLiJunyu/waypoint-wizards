@@ -38,15 +38,15 @@ export function Sidebar() {
       />
 
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-64 bg-red-500 border-r p-5 flex flex-col shadow-xl transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-0 left-0 z-50 h-screen w-64 bg-red-500 border-r p-5 flex flex-col shadow-xl transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex items-center justify-between pb-6 border-b">
-          <span className="font-bold text-lg text-primary track-tight">
+          <span className="font-bold text-2xl text-gray-300 track-tight ">
             WayPoint Wizards
           </span>
           <button
             onClick={closeSideBar}
-            className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+            className="p-1.5 rounded-full hover:bg-muted hover:text-black transition-colors text-gray-300"
           >
             <X className="size-5" />
           </button>
@@ -56,7 +56,7 @@ export function Sidebar() {
           <Link
             href="/new-trip"
             onClick={closeSideBar}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:underline hover:text-foreground transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
           >
             Plan a New Trip
           </Link>
@@ -65,7 +65,7 @@ export function Sidebar() {
         <div className="pt-4 border-t">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3  py-2.5 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 hover:underline transition-colors"
+            className="w-full flex items-center gap-3 px-3  py-2.5 rounded-md text-sm font-bold text-gray-300 hover:bg-destructive/10 hover:underline transition-colors"
           >
             <LogOut className="size-4" />
             Logout

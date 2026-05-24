@@ -33,7 +33,7 @@ function DestinationInput({ value, onChange} : {
     }
     
     function handleSelect(suggestion: Suggestion) {
-        onChange(suggestion.name + ',' + suggestion.country);
+        onChange(suggestion.name + ', ' + suggestion.country);
         setSuggestions([]);
         setDropdown(false);
     }

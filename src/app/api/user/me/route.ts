@@ -26,12 +26,12 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({error: 'Invalid token payload structure'}, {status: 401});
         }
 
+        // only return user metadata for a more lightweight app
         const user = await prisma.user.findUnique({
             where: {email: userEmail},
             select: {
                 name: true,
                 email: true,
-                trips: true,
                 imageUrl: true
             },
         });

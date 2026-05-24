@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,13 +18,26 @@ import {
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, isLoading } = useUser();
+  const router = useRouter();
 
   const toggleSideBar = () => setIsOpen(!isOpen);
   const closeSideBar = () => setIsOpen(false);
 
   const handleLogout = async () => {
-    console.log("Logging out."); // TODO: API call to prisma for logout
-    closeSideBar();
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      if (response.ok) {
+        closeSideBar();
+        router.refresh();
+        router.push('/')
+      } else {
+        console.error("Failed to log out: Server-side");
+      }
+    } catch (error) {
+      console.error("An error occured during logout: ", error);
+    }
   };
 
   return (

@@ -27,6 +27,8 @@ function TripClient({ destination, startDate, endDate }: {
     const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
     const cardRefs = useRef<{ [placeId: string]: HTMLDivElement | null }>({});
 
+    // first fetch is for the location coordinates (from api/geocode), second fetch is for attractions based on the coordinates
+    // attraction fetched is only 5km from the coordinates (can be changed in api/attractions)
     useEffect(() => {
         const geocode = async () => {
             const res = await fetch(`/api/geocode?destination=${encodeURIComponent(destination)}`);
@@ -40,6 +42,7 @@ function TripClient({ destination, startDate, endDate }: {
         geocode();
     }, [destination]);
 
+    // selecting attracction marker on the map will scroll to selected attraction on the attraction card list
     useEffect(() => {
         if (selectedAttraction) {
             cardRefs.current[selectedAttraction.placeId]?.scrollIntoView({
@@ -53,13 +56,16 @@ function TripClient({ destination, startDate, endDate }: {
         <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
             <main className="flex h-screen bg-[#F9F9F9]">
                 <div className="p-8 w-1/3 flex flex-col">
+                {/* text showing location and dates */}
                     <h1 className="text-4xl font-bold">The Next Station is {destination} LOL</h1>
                     <p className="text-gray-500 mt-2"> {start.toDateString()} → {end.toDateString()} </p>
+                    {/* attraction search component */}
                     <AttractionSearch
                         lat={center.lat}
                         lng={center.lng}
                         onResults={setAttractions}
                     />
+                    {/* attraction card list */}
                     <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
                         {attractions.map((attraction) => (
                             <div key={attraction.placeId} ref={el => { cardRefs.current[attraction.placeId] = el }} 
@@ -76,6 +82,7 @@ function TripClient({ destination, startDate, endDate }: {
                         ))}
                     </div>
                 </div>
+                {/* rendering map on the right spanning 2/3 of the screen */}
                 <div className="w-2/3 h-full">
                     <MapComponent 
                         destination={destination} 

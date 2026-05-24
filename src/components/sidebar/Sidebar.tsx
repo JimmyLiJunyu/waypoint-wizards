@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useUser } from "@/context/UserContext";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Menu,
   X,
@@ -9,10 +11,12 @@ import {
   Compass,
   LogOut,
   Settings,
+  User,
 } from "lucide-react";
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isLoading } = useUser();
 
   const toggleSideBar = () => setIsOpen(!isOpen);
   const closeSideBar = () => setIsOpen(false);
@@ -51,6 +55,24 @@ export function Sidebar() {
             <X className="size-5" />
           </button>
         </div>
+
+        <div className="flex items-center gap-3 py-4 border-y">
+            {isLoading ? (<div>Loading user...</div>) : (
+                <>
+                    <div className="relative size-10 shrink-0 rounded-full overflow-hidden bg-muted border-border flex items-center justify-center">
+                        {user?.imageUrl ? (
+                            <Image src={user.imageUrl} alt="Avatar" fill className="object-cover object-center"/>
+                        ): <User className="size-5"/> }
+
+                    </div>
+                    <div>
+                        <p className="text-lg text-gray-300 font-bold">{user?.name || "Explorer"}</p>
+                        <p className="text-sm text-gray-300 font-medium">{user?.email}</p>
+                    </div>
+                </>
+            )}
+        </div>
+
 
         <nav className="flex-1 flex flex-col gap-1.5 py-6">
           <Link

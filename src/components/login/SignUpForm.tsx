@@ -29,10 +29,10 @@ function SignUpForm() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Sign Up successful!");
+        // alert("Sign Up successful!");
         router.replace("/login");
       } else {
-        alert("Error");
+         // alert("Error");
         setError(data.error || "Something went wrong. Please try again.");
       }
     } catch (e) {

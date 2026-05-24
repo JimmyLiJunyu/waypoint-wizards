@@ -26,10 +26,10 @@ function LoginForm() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Logged in successfully!");
+        // alert("Logged in successfully!");
         router.replace("/new-trip");
       } else {
-        alert("Invalid credentials.");
+        // alert("Invalid credentials.");
         setError(data.error || "Invalid Credentials.");
       }
     } catch (e) {

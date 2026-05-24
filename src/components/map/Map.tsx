@@ -1,5 +1,5 @@
 'use client'
-import { Map, useApiIsLoaded, Marker, InfoWindow, useMap } from '@vis.gl/react-google-maps';
+import { Map, useApiIsLoaded, AdvancedMarker, InfoWindow, useMap } from '@vis.gl/react-google-maps';
 import { useState, useEffect } from 'react';
 
 interface Attraction {
@@ -46,7 +46,7 @@ function MapInner({ center, attractions, selectedAttraction, onSelectAttraction 
             mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
         >
         {attractions.map((attraction) => (
-            <Marker
+            <AdvancedMarker
                 key={attraction.placeId}
                 position={{ lat: attraction.lat, lng: attraction.lng }}
                 onClick={() => onSelectAttraction(attraction)} />

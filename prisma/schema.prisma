@@ -34,14 +34,17 @@ model Destination {
   position Float
 
   // relation
-  itineraryId Int
+  itineraryId String
   itinerary Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
 }
 
 model Itinerary {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid())
   title String
-  createdAt DateTime
+  createdAt DateTime @default(now())
+  location String
+  startDate DateTime
+  endDate DateTime
 
   // relations
   destinations Destination[] // one to many
@@ -57,7 +60,7 @@ model Collaborator {
   userId Int
   user User @relation(fields: [userId], references: [id])
 
-  itineraryId Int
+  itineraryId String
   itinerary Itinerary @relation(fields:[itineraryId], references:[id])
 
   @@unique([userId, itineraryId]) // Composite primary key of userId and itineraryId

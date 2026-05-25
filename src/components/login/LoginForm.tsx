@@ -27,7 +27,7 @@ function LoginForm() {
 
       if (response.ok) {
         // alert("Logged in successfully!");
-        router.replace("/new-trip");
+        router.replace("/dashboard");
       } else {
         // alert("Invalid credentials.");
         setError(data.error || "Invalid Credentials.");

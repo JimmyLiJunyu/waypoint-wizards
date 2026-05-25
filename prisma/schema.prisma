@@ -14,24 +14,51 @@ datasource db {
 }
 
 model User {
-  id String @id @default(uuid()) // universal unique identifier
+  id Int @id @default(autoincrement()) // universal unique identifier
   email String @unique
   password String // hashed password
   name String?
   imageUrl String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  trips Trips[]
+  
+  // relation to join table
+  itinearies Collaborator[]
 }
 
-model Trips {
-  id String @id @default(uuid())
-  tripName String?
-  createdAt DateTime @default(now())
-  @@index([userId])
+model Destination {
+  id Int @id @default(autoincrement())
+  placeName String
+  arrival DateTime
+  departure DateTime
+  position Float
 
-  // Relation to User
-  userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // if delete a user, all related trips cascade (might have to change for multi users)
+  // relation
+  itineraryId Int
+  itinerary Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+}
 
+model Itinerary {
+  id Int @id @default(autoincrement())
+  title String
+  createdAt DateTime
+
+  // relations
+  destinations Destination[] // one to many
+  collaborators Collaborator[]
+}
+
+// join table of user and itinerary, many to many relation
+model Collaborator {
+  id Int @id @default(autoincrement())
+  role String @default("EDITOR") // can be owner, viewer etc
+
+  // relations
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+
+  itineraryId Int
+  itinerary Itinerary @relation(fields:[itineraryId], references:[id])
+
+  @@unique([userId, itineraryId]) // Composite primary key of userId and itineraryId
 }

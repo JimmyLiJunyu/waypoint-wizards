@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { createUser } from '@/services/userServices';
 
 export async function POST(request: Request) {
   try {
@@ -10,22 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing email or password!" });
     }
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
-
-    if (existingUser) {
-      return NextResponse.json({ error: "Email already registered!" });
-    }
-
-    // hashing password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await prisma.user.create({
-      data: {
-        email: email.toLowerCase(),
-        password: hashedPassword,
-      },
-    });
+    await createUser({ email, password });
 
     return NextResponse.json({
       success: true,
@@ -33,8 +19,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-  
     console.error("Signup Error details:", errorMessage);
+
+    if (errorMessage === "Email already registered!") {
+      return NextResponse.json({ error: errorMessage }, {status: 400});
+    }
+    
     return NextResponse.json(
       { error: errorMessage},
       { status: 500 },

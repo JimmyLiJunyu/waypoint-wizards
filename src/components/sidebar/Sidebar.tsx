@@ -90,11 +90,39 @@ export function Sidebar() {
 
         <nav className="flex-1 flex flex-col gap-1.5 py-6">
           <Link
+            href="/dashboard"
+            onClick={closeSideBar}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
+          >
+            Dashboard
+          </Link>
+          <Link
             href="/new-trip"
             onClick={closeSideBar}
             className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
           >
-            Plan a New Trip
+            New Trip
+          </Link>
+          <Link
+            href="/account"
+            onClick={closeSideBar}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
+          >
+            Account
+          </Link>
+          <Link
+            href="/socials"
+            onClick={closeSideBar}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
+          >
+            Socials
+          </Link>
+          <Link
+            href="/ai-planner"
+            onClick={closeSideBar}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
+          >
+            AI Planner
           </Link>
         </nav>
 

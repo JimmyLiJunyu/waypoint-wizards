@@ -25,13 +25,13 @@ export default function TripTable() {
         async function fetchUser() {
             try {
                 if (!user) throw Error('Error rendering user data.');
-                const res = await fetch(`/api/get-trips/${user.id}`);
+                const res = await fetch(`/api/get-user-trips/${user.id}`);
 
                 if (!res.ok) {
                     throw new Error(`Failed to fetch trips: ${res.statusText}`);
                 }
-                const data = await res.json();
-                setTrips(data);
+                const tripData = await res.json();
+                setTrips(tripData.userTrips);
 
             } catch (error) {
                 if (error instanceof Error) {
@@ -49,11 +49,14 @@ export default function TripTable() {
 
     return (
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                    {trips.map(trip => (
-                        <div key={trip.id} className='bg-white border rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer'>
-                            <h2 className="text-xl font-bold">{trip.title}</h2>
-                            <p className="text-gray-500 mt-2 text-sm">Created {new Date(trip.createdAt).toDateString()}</p>
-                        </div>
+                    {trips?.map(trip => (
+                        <Link href={`/trip/${trip.id}`} key={trip.id}>
+                            <div className='bg-white border rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer'>
+                                <h2 className="text-xl font-bold">{trip.title}</h2>
+                                <p className="text-gray-500 mt-2 text-sm">Location: {trip.location}</p>
+                                <p className="text-gray-500 mt-2 text-sm">Created {new Date(trip.createdAt).toDateString()}</p>
+                            </div>
+                        </Link>
                     ))}
                 </div>
     )

@@ -1,5 +1,6 @@
 
 import Link from 'next/link';
+import TripTable  from "@/components/tripTable/TripTable";
 // need to replace this with actual data from database
 // need to add api to fetch from database, then fetch from api
 const placeholderTrips = [
@@ -26,15 +27,8 @@ function Dashboard() {
                         </button>
                     </Link>
                 </div>
+                <TripTable/>
                 
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                    {placeholderTrips.map(trip => (
-                        <div key={trip.id} className='bg-white border rounded-xl p-6 hover:shadow-md transition-shadow cursor-pointer'>
-                            <h2 className="text-xl font-bold">{trip.tripName}</h2>
-                            <p className="text-gray-500 mt-2 text-sm">Created {new Date(trip.createdAt).toDateString()}</p>
-                        </div>
-                    ))}
-                </div>
             </div>
         </main>
     )

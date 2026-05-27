@@ -11,7 +11,8 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-    DragOverlay
+    DragOverlay,
+    MeasuringStrategy
 } from '@dnd-kit/core';
 import DraggableAttractionItem from "../itinerary/DraggableAttractionItem";
 import ItinerarySidebar from "../itinerary/ItinerarySidebar";
@@ -65,6 +66,12 @@ function TripClient({ destination, startDate, endDate }: {
     // find the attraction from attraction list or existing itinerary
     const handleDragStart = (event: DragStartEvent) => {
         const source = event.active.data.current?.source;
+        const attraction = event.active.data.current?.attraction;
+
+        if (attraction) {
+            setActiveAttraction(attraction);
+            return;
+        }
 
         if (source === 'list') {
             const attraction = attractions.find(a => a.placeId === event.active.id);
@@ -206,9 +213,14 @@ function TripClient({ destination, startDate, endDate }: {
                 sensors={sensors}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
+                measuring={{
+                    droppable: {
+                        strategy: MeasuringStrategy.Always
+                    }
+                }}
             >
                 <main className="flex h-screen bg-[#F9F9F9]">
-                    <div className="p-8 w-1/3 flex flex-col">
+                    <div className="p-8 w-1/3 flex flex-col shrink-0">
                     {/* text showing location and dates */}
                         <h1 className="text-4xl font-bold">The Next Station is {destination} LOL</h1>
                         <p className="text-gray-500 mt-2"> {start.toDateString()} → {end.toDateString()} </p>

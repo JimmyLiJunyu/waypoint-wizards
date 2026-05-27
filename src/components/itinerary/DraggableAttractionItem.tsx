@@ -15,7 +15,7 @@ function DraggableAttractionItem({ attraction, isSelected, onClick, cardRef } : 
 
     const style = {
         transform: CSS.Translate.toString(transform),
-        opacity: isDragging ? 0.5 : 1
+        opacity: isDragging ? 0.5 : 1,
     };
 
     return (

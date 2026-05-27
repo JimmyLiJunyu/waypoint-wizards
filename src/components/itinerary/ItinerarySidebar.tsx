@@ -17,7 +17,7 @@ function ItinerarySidebar({
 }) {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const numDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const numDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     const days = Array.from({ length: numDays }, (_, i) => {
         const date = new Date(start)

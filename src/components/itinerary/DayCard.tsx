@@ -20,7 +20,7 @@ function DayCard({ day, date, attractions, onRemove } : {
                 className={`min-h-24 rounded-lg border-2 border-dashed p-2 flex flex-col gap-2 transition-colors ${isOver ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}>
                     {/* attractions inside each daycard is sortable */}
                     <SortableContext
-                        items={attractions.map(a => a.placeId)}
+                        items={attractions.map(a => a.instanceId!)}
                         strategy={verticalListSortingStrategy}>
                         {attractions.length === 0 ? (
                             <p className='text-gray-400 text-sm text-center py-4'>Drop attractions here</p>

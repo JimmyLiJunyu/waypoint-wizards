@@ -1,13 +1,7 @@
 
 import Link from 'next/link';
 import TripTable  from "@/components/tripTable/TripTable";
-// need to replace this with actual data from database
-// need to add api to fetch from database, then fetch from api
-const placeholderTrips = [
-    { id: '1', tripName: 'Tokyo Trip', createdAt: '2026-05-01' },
-    { id: '2', tripName: 'Paris Trip', createdAt: '2026-05-02' },
-    { id: '3', tripName: 'Bali Trip', createdAt: '2026-05-03' },
-];
+
 
 function Dashboard() {
 

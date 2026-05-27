@@ -10,7 +10,7 @@ function DraggableAttractionItem({ attraction, isSelected, onClick, cardRef } : 
 }) {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: attraction.placeId,
-        data: { attraction }
+        data: { attraction, source: 'list' }
     });
 
     const style = {
@@ -24,7 +24,7 @@ function DraggableAttractionItem({ attraction, isSelected, onClick, cardRef } : 
             style={style}
             {...attributes}
             {...listeners}
-            className={`border p-3 rounded-lg bg-white cursor-grab active:cursor-grabbing transition-colors ${isSelected ? 'border-red-500 bg-red-50' : 'hover:bg-gray-50'}`}
+            className={`border p-3 rounded-lg bg-white cursor-grab active:cursor-grabbing select-none transition-colors ${isSelected ? 'border-red-500 bg-red-50' : 'hover:bg-gray-50'}`}
             onClick={onClick}>
             <h3 className='font-semibold'> {attraction.name} </h3>
             <p className='text-gray-500 text-sm'> {attraction.address} </p>

@@ -6,4 +6,5 @@ export interface Attraction {
     address: string;
     reviews: number;
     placeId: string;
+    instanceId?: string;
 }

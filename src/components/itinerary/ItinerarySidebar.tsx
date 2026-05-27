@@ -6,12 +6,14 @@ function ItinerarySidebar({
     startDate,
     endDate,
     itinerary,
-    isOpen
+    isOpen,
+    onRemove
 } : {
     startDate: string;
     endDate: string;
     itinerary: { [day: number]: Attraction[] };
     isOpen: boolean;
+    onRemove: (instanceId: string) => void;
 }) {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -36,6 +38,7 @@ function ItinerarySidebar({
                 day={index + 1}
                 date={date}
                 attractions={itinerary[index + 1] ?? []}
+                onRemove={onRemove}
                 />
             ))}
         </div>

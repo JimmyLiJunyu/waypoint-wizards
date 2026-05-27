@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 interface CreateItineraryInput {
     title: string,
-    userId: number,
+    userId: string,
     destination: string,
     startDate: Date,
     endDate: Date

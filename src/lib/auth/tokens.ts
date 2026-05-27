@@ -2,7 +2,7 @@ import * as jose from 'jose';
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret_key');
 
-export async function signJWT(payload: {userId: number; email: string }) {
+export async function signJWT(payload: {userId: string; email: string }) {
     return await new jose.SignJWT(payload)
         .setProtectedHeader({ alg: "HS256" })
         .setExpirationTime('24h')

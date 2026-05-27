@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
             select: {
                 name: true,
                 email: true,
-                imageUrl: true
+                imageUrl: true,
+                id: true
             },
         });
 

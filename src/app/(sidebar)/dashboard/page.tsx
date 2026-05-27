@@ -1,5 +1,5 @@
-import Link from 'next/link';
 
+import Link from 'next/link';
 // need to replace this with actual data from database
 // need to add api to fetch from database, then fetch from api
 const placeholderTrips = [
@@ -9,6 +9,9 @@ const placeholderTrips = [
 ];
 
 function Dashboard() {
+
+
+
     return (
         <main className='min-h-screen bg-[#F9F9F9] p-8'>
             <div className='max-w-4xl mx-auto'>

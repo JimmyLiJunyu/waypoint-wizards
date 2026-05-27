@@ -14,8 +14,13 @@ export async function updateProfile(
   formData: PayloadUserUpdate,
 ) {
   try {
-    const existingUser = await prisma.user.findUnique({
-      where: {email: formData.email}
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: formData.email,
+        id: {
+          not: userId
+        }
+      }
     });
 
     if (existingUser) return { success: false, user: null, error: "Email already registed with another account!"};

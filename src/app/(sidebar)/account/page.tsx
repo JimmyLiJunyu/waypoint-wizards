@@ -2,7 +2,7 @@
 
 import { updateProfile } from "./action";
 import { useUser } from "@/context/UserContext";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
   User,
@@ -19,6 +19,7 @@ function AccountPage() {
   const [image, setImage] = useState(user?.imageUrl || "");
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   if (isUserLoading) return <p>Loading profile...</p>;
   if (!user) return <p>Server error.</p>;
@@ -26,6 +27,8 @@ function AccountPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdating(true);
+    setError("");
+    setSuccess("");
 
     try {
       const data = {
@@ -38,13 +41,15 @@ function AccountPage() {
       if (!result.success) {
         console.log(result.error || "Error updating profile");
         setError(result.error as string);
-      }
-      setUser(result.user);
-      const updatedUser = result.user;
-      if (updatedUser) {
-        setName(updatedUser.name as string);
-        setEmail(updatedUser.email);
-        setImage(updatedUser.imageUrl as string);
+      } else {
+        setUser(result.user);
+        const updatedUser = result.user;
+        if (updatedUser) {
+          setName(updatedUser.name as string);
+          setEmail(updatedUser.email);
+          setImage(updatedUser.imageUrl as string);
+          setSuccess("Update Success!");
+        }
       }
     } catch (error) {
       console.error(error);
@@ -82,6 +87,12 @@ function AccountPage() {
           {error && (
             <div className="bg-red-50 text-red-600 p-2 rounded text-sm border border-red-200">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-50 text-green-600 p-2 rounded text-sm border border-green-200">
+              {success}
             </div>
           )}
 

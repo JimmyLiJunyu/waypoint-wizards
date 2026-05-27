@@ -1,15 +1,6 @@
 'use client'
 import { useState } from "react";
-
-interface Attraction {
-    name: string;
-    lat: number;
-    lng: number;
-    rating: number;
-    address: string;
-    reviews: number;
-    placeId: string;
-}
+import { Attraction } from "@/types/attractions";
 
 function AttractionSearch({ lat, lng, onResults } : {
     lat: number;

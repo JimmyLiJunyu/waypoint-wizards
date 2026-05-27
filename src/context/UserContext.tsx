@@ -5,7 +5,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 interface UserProfile {
     name: string | null,
     email: string | null,
-    imageUrl: string | null
+    imageUrl: string | null,
+    id: string
 };
 
 const UserContext = createContext<{

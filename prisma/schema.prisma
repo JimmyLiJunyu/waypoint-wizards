@@ -14,7 +14,7 @@ datasource db {
 }
 
 model User {
-  id Int @id @default(autoincrement()) // universal unique identifier
+  id String @id @default(uuid()) // universal unique identifier
   email String @unique
   password String // hashed password
   name String?
@@ -57,7 +57,7 @@ model Collaborator {
   role String @default("EDITOR") // can be owner, viewer etc
 
   // relations
-  userId Int
+  userId String
   user User @relation(fields: [userId], references: [id])
 
   itineraryId String

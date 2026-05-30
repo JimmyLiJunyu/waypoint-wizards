@@ -69,44 +69,57 @@ For Milestone 1, we have built an integrated frontend and backend that demonstra
 - Backend API routes: `POST /api/auth/signup`, `POST /api/auth/login`, `POST /api/auth/logout`
 - Frontend pages: `/login`, `/sign-up`
 
+<table>
+  <tr>
+    <td><img src="./screenshots/login.png" width="400"/></td>
+    <td><img src="./screenshots/signup.png" width="400"/></td>
+  </tr>
+  <tr>
+    <td align="center">Login page</td>
+    <td align="center">Sign up page</td>
+  </tr>
+</table>
+
 #### 2. Trip Creation
 - Authenticated users can create a new trip by specifying a destination, start date, and end date.
 - The trip is saved to the database and linked to the user's account.
 - Users are redirected to the trip planning view upon creation.
 - Backend API route: `POST /api/new-trip`
 
+  ![New Trip](./screenshots/new-trip.png)
+
 #### 3. Attraction Search with Google Places API
 - Given a destination, the system geocodes the location and fetches nearby attractions using the Google Places Text Search API.
 - Results display each attraction's name, rating, address, and total reviews.
 - Backend API routes: `GET /api/geocode`, `GET /api/attractions`
+
+  ![Attraction Search](./screenshots/attraction.png)
 
 #### 4. Interactive Map
 - Attractions are displayed as markers on an interactive Google Map (`@vis.gl/react-google-maps`).
 - Clicking a marker on the map scrolls to the corresponding attraction card in the list.
 - Selecting an attraction card pans the map to its coordinates.
 
+  ![Interactive Map](./screenshots/map-view.png)
+
 #### 5. Drag-and-Drop Itinerary Builder
 - Users can drag attractions from the search results panel and drop them into a day-by-day itinerary sidebar.
 - Within each day, attractions can be reordered via drag-and-drop using `@dnd-kit`.
 - The itinerary sidebar supports multiple days based on the trip duration.
 
+  [Watch demo video](https://drive.google.com/file/d/1jDncra7blPKHifJrP4awhcKXdhYHRqiS/view?usp=sharing)
+
 #### 6. User Dashboard
 - Authenticated users have a dashboard displaying their saved trips.
 - Backend API route: `GET /api/get-user-trips/[userId]`
+
+  ![Dashboard](./screenshots/dashboard.png)
 
 ### System Architecture
 
 The application follows a layered architecture:
 
-```
-Frontend (Next.js / React / Tailwind CSS)
-        ↕
-Backend API (Next.js API Routes)
-        ↕
-Database (PostgreSQL via Prisma ORM)
-        ↕
-External APIs (Google Places, Google Geocoding, Google Maps)
-```
+![Architecture](./screenshots/structure.png)
 
 **Key design decisions:**
 - Next.js App Router is used for both frontend pages and backend API routes, keeping the codebase unified.

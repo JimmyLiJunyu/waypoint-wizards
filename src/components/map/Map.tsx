@@ -1,16 +1,7 @@
 'use client'
 import { Map, useApiIsLoaded, AdvancedMarker, InfoWindow, useMap } from '@vis.gl/react-google-maps';
 import { useState, useEffect } from 'react';
-
-interface Attraction {
-    name: string;
-    lat: number;
-    lng: number;
-    rating: number;
-    address: string;
-    reviews: number;
-    placeId: string;
-}
+import { Attraction } from '@/types/attractions';
 
 function MapInner({ center, attractions, selectedAttraction, onSelectAttraction }: { 
     center: { lat: number, lng: number };

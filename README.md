@@ -81,6 +81,7 @@ For Milestone 1, we have built an integrated frontend and backend that demonstra
 - The trip is saved to the database and linked to the user's account.
 - Users are redirected to the trip planning view upon creation.
 - Backend API route: `POST /api/new-trip`
+  
 
   <img src="./screenshots/new-trip.png" width="500"/>
 
@@ -89,12 +90,12 @@ For Milestone 1, we have built an integrated frontend and backend that demonstra
 - Results display each attraction's name, rating, address, and total reviews.
 - Backend API routes: `GET /api/geocode`, `GET /api/attractions`
 
-  <img src="./screenshots/attraction.png" width="500"/>
 
 #### 4. Interactive Map
 - Attractions are displayed as markers on an interactive Google Map (`@vis.gl/react-google-maps`).
 - Clicking a marker on the map scrolls to the corresponding attraction card in the list.
 - Selecting an attraction card pans the map to its coordinates.
+
 
   ![Interactive Map](./screenshots/map-view.png)
 
@@ -103,17 +104,19 @@ For Milestone 1, we have built an integrated frontend and backend that demonstra
 - Within each day, attractions can be reordered via drag-and-drop using `@dnd-kit`.
 - The itinerary sidebar supports multiple days based on the trip duration.
 
-  https://github.com/JimmyLiJunyu/waypoint-wizards/blob/main/screenshots/itinerary%20showcase.mov
+  https://github.com/JimmyLiJunyu/waypoint-wizards/raw/main/screenshots/itinerary%20showcase.mov
 
 #### 6. User Dashboard
 - Authenticated users have a dashboard displaying their saved trips.
 - Backend API route: `GET /api/get-user-trips/[userId]`
+
 
   ![Dashboard](./screenshots/dashboard.png)
 
 ### System Architecture
 
 The application follows a layered architecture:
+
 
 <img src="./screenshots/structure.png" width="500"/>
 

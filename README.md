@@ -74,10 +74,6 @@ For Milestone 1, we have built an integrated frontend and backend that demonstra
     <td><img src="./screenshots/login.png" width="400"/></td>
     <td><img src="./screenshots/signup.png" width="400"/></td>
   </tr>
-  <tr>
-    <td align="center">Login page</td>
-    <td align="center">Sign up page</td>
-  </tr>
 </table>
 
 #### 2. Trip Creation
@@ -86,14 +82,14 @@ For Milestone 1, we have built an integrated frontend and backend that demonstra
 - Users are redirected to the trip planning view upon creation.
 - Backend API route: `POST /api/new-trip`
 
-  ![New Trip](./screenshots/new-trip.png)
+  <img src="./screenshots/new-trip.png" width="500"/>
 
 #### 3. Attraction Search with Google Places API
 - Given a destination, the system geocodes the location and fetches nearby attractions using the Google Places Text Search API.
 - Results display each attraction's name, rating, address, and total reviews.
 - Backend API routes: `GET /api/geocode`, `GET /api/attractions`
 
-  ![Attraction Search](./screenshots/attraction.png)
+  <img src="./screenshots/attraction.png" width="500"/>
 
 #### 4. Interactive Map
 - Attractions are displayed as markers on an interactive Google Map (`@vis.gl/react-google-maps`).
@@ -107,7 +103,7 @@ For Milestone 1, we have built an integrated frontend and backend that demonstra
 - Within each day, attractions can be reordered via drag-and-drop using `@dnd-kit`.
 - The itinerary sidebar supports multiple days based on the trip duration.
 
-  [Watch demo video](https://drive.google.com/file/d/1jDncra7blPKHifJrP4awhcKXdhYHRqiS/view?usp=sharing)
+  https://github.com/JimmyLiJunyu/waypoint-wizards/blob/main/screenshots/itinerary%20showcase.mov
 
 #### 6. User Dashboard
 - Authenticated users have a dashboard displaying their saved trips.
@@ -119,7 +115,7 @@ For Milestone 1, we have built an integrated frontend and backend that demonstra
 
 The application follows a layered architecture:
 
-![Architecture](./screenshots/structure.png)
+<img src="./screenshots/structure.png" width="500"/>
 
 **Key design decisions:**
 - Next.js App Router is used for both frontend pages and backend API routes, keeping the codebase unified.

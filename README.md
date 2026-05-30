@@ -104,7 +104,7 @@ For Milestone 1, we have built an integrated frontend and backend that demonstra
 - Within each day, attractions can be reordered via drag-and-drop using `@dnd-kit`.
 - The itinerary sidebar supports multiple days based on the trip duration.
 
-  https://github.com/JimmyLiJunyu/waypoint-wizards/raw/main/screenshots/itinerary%20showcase.mov
+  https://github.com/JimmyLiJunyu/waypoint-wizards/raw/main/screenshots/itinerary.mp4
 
 #### 6. User Dashboard
 - Authenticated users have a dashboard displaying their saved trips.

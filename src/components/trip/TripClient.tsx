@@ -222,7 +222,7 @@ function TripClient({ destination, startDate, endDate }: {
                 <main className="flex h-screen bg-[#F9F9F9]">
                     <div className="p-8 w-1/3 flex flex-col shrink-0">
                     {/* text showing location and dates */}
-                        <h1 className="text-4xl font-bold">The Next Station is {destination} LOL</h1>
+                        <h1 className="text-4xl font-bold">The Next Station is {destination} </h1>
                         <p className="text-gray-500 mt-2"> {start.toDateString()} → {end.toDateString()} </p>
                         {/* attraction search component */}
                         <AttractionSearch

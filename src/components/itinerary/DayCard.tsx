@@ -25,9 +25,12 @@ function DayCard({ day, date, attractions, onRemove } : {
                         {attractions.length === 0 ? (
                             <p className='text-gray-400 text-sm text-center py-4'>Drop attractions here</p>
                         ) : (
-                            attractions.map((attraction) => (
-                                <SortableAttractionItem key={attraction.placeId} attraction={attraction} onRemove={onRemove} />
-                            ))
+                            <>
+                                {attractions.map((attraction) => (
+                                    <SortableAttractionItem key={attraction.placeId} attraction={attraction} onRemove={onRemove} />
+                                ))}
+                                <div className='min-h-8' />
+                            </>
                         )}
                     </SortableContext>
             </div>

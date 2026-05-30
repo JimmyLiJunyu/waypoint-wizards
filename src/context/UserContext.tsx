@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { Dispatch, SetStateAction, createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface UserProfile {
     name: string | null,
@@ -11,6 +11,7 @@ interface UserProfile {
 
 const UserContext = createContext<{
     user: UserProfile | null,
+    setUser: Dispatch<SetStateAction<UserProfile | null>>,
     isLoading: boolean,
 } | undefined> (undefined);
 
@@ -36,7 +37,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <UserContext.Provider value={{ user, isLoading }}>
+        <UserContext.Provider value={{ user, setUser, isLoading }}>
             {children}
         </UserContext.Provider>
     )

@@ -4,7 +4,6 @@
 **Team Members:** Li Junyu & Alpha Hong (Team 6761)
 **Proposed Level of Achievement:** Apollo
 
----
 
 ## Motivation
 
@@ -14,7 +13,6 @@ Existing travel planning tools either focus on specific aspects of travel (such 
 
 We are motivated to build a centralized trip planning platform that simplifies this process by automatically organizing travel information and assisting users in generating optimized itineraries. By combining location data, routing information, and personalized preferences, our system aims to help travelers plan trips more efficiently while reducing manual effort.
 
----
 
 ## Aim
 
@@ -22,7 +20,6 @@ Waypoint is an intelligent trip planning platform that allows users to easily cr
 
 The platform also supports collaborative planning so that multiple users can coordinate and contribute to the same itinerary.
 
----
 
 ## User Stories
 
@@ -33,7 +30,6 @@ The platform also supports collaborative planning so that multiple users can coo
 5. As a planner, I want to be able to plan accommodation and bookings on the app.
 6. As a traveler, I want to track finances of the trip and record who paid for each expense (Splitwise-style).
 
----
 
 ## Features
 
@@ -59,7 +55,6 @@ The system will integrate third-party accommodation and event booking platforms 
 **Feature 6: Budget Estimation and Tracking**
 The application will estimate approximate travel costs and feature a built-in shared ledger where trip expenses can be tracked and split between users (similar to Splitwise).
 
----
 
 ## Milestone 1 — Technical Proof of Concept
 
@@ -145,7 +140,6 @@ Development follows an iterative process with weekly goals aligned to milestone 
 **Testing**
 Unit and integration testing will be added progressively, with priority on API routes and core business logic.
 
----
 
 ## Development Plan
 

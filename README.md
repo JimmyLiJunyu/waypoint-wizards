@@ -4,6 +4,8 @@
 **Team Members:** Li Junyu & Alpha Hong (Team 6761)
 **Proposed Level of Achievement:** Apollo
 
+**[Live Demo] (https://waypoint-wizards.vercel.app)**
+
 
 ## Motivation
 

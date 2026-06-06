@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
         const newItinerary = await createItinerary({
             title: "Untitled",
-            userId: session.userId,
+            userId: session.userId.toString(), 
             destination: destination,
             startDate: startDate,
             endDate: endDate

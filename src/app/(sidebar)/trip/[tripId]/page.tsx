@@ -1,6 +1,7 @@
 import TripClient from "@/components/trip/TripClient";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { Attraction } from "@/types/attractions";
 
 async function Trip({
   params,

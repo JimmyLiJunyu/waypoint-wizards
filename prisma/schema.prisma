@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,58 +5,65 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
 }
 
 model User {
-  id String @id @default(uuid()) // universal unique identifier
-  email String @unique
-  password String // hashed password
-  name String?
-  imageUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // relation to join table
+  id         String         @id @default(uuid())
+  email      String         @unique
+  name       String?
+  imageUrl   String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  password   String
   itinearies Collaborator[]
 }
 
 model Destination {
-  id Int @id @default(autoincrement())
-  placeName String
-  arrival DateTime
-  departure DateTime
-  position Float
-
-  // relation
+  id          Int       @id @default(autoincrement())
+  placeName   String
+  arrival     DateTime
+  departure   DateTime
+  position    Float
   itineraryId String
-  itinerary Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
 }
 
 model Itinerary {
-  id String @id @default(uuid())
-  title String
-  createdAt DateTime @default(now())
-  location String
-  startDate DateTime
-  endDate DateTime
-
-  // relations
-  destinations Destination[] // one to many
+  id            String         @id @default(uuid())
+  title         String
+  createdAt     DateTime       @default(now())
+  location      String
+  startDate     DateTime
+  endDate       DateTime
   collaborators Collaborator[]
+  destinations  Destination[]
+  itineraryItems ItineraryItem[]
 }
 
-// join table of user and itinerary, many to many relation
 model Collaborator {
-  id Int @id @default(autoincrement())
-  role String @default("EDITOR") // can be owner, viewer etc
+  id          Int       @id @default(autoincrement())
+  role        String    @default("EDITOR")
+  userId      String
+  itineraryId String
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
 
-  // relations
-  userId String
-  user User @relation(fields: [userId], references: [id])
+  @@unique([userId, itineraryId])
+}
+
+model ItineraryItem {
+  id          Int      @id @default(autoincrement())
+  dayNumber   Int
+  position    Int      // order of attractions
+  placeId     String
+  name        String
+  address     String
+  lat         Float
+  lng         Float
+  rating      Float
+  reviews     Int
+  instanceId  String   // the client-side instanceId
 
   itineraryId String
-  itinerary Itinerary @relation(fields:[itineraryId], references:[id])
-
-  @@unique([userId, itineraryId]) // Composite primary key of userId and itineraryId
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
 }

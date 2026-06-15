@@ -7,6 +7,23 @@ datasource db {
   provider = "postgresql"
 }
 
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+}
+
+model Follow {
+  followerId String
+  followingId String
+  status FollowStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  follower User @relation("UserFollowing", fields: [followingId], references: id, onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followerId], references: id, onDelete: Cascade)
+  @@id([followerId, followingId])
+}
+
 model User {
   id         String         @id @default(uuid())
   email      String         @unique
@@ -16,6 +33,10 @@ model User {
   updatedAt  DateTime       @updatedAt
   password   String
   itinearies Collaborator[]
+
+  // relations for following system
+  following Follow[] @relation("UserFollowing")
+  followers Follow[] @relation("UserFollowers")
 }
 
 model Destination {

@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const query = searchParams.get('query') || 'tourist attraction'
 
   const res = await fetch(
-    `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${query}+in+${lat},${lng}&location=${lat},${lng}&radius=5000&key=${process.env.GOOGLE_MAPS_API_KEY}`
+    `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${query}+in+${lat},${lng}&location=${lat},${lng}&radius=500000&key=${process.env.GOOGLE_MAPS_API_KEY}`
   )
   const data = await res.json()
 

@@ -17,6 +17,8 @@ import {
 import DraggableAttractionItem from "../itinerary/DraggableAttractionItem";
 import ItinerarySidebar from "../itinerary/ItinerarySidebar";
 import { arrayMove } from "@dnd-kit/sortable";
+import TripDetailsPanel from "./TripDetailsPanel";
+import { getDayColour } from "@/lib/dayColours";
 
 function TripClient({
   itineraryId,
@@ -52,6 +54,51 @@ function TripClient({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details">(
+    "attractions"
+  );
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [dayLegs, setDayLegs] = useState<{
+    [day: number]: {
+      walking: {
+        distanceText: string;
+        durationText: string;
+        durationSeconds: number;
+      }[];
+      driving: {
+        distanceText: string;
+        durationText: string;
+        durationSeconds: number;
+      }[];
+      transit: {
+        distanceText: string;
+        durationText: string;
+        durationSeconds: number;
+        transitLine?: string;
+        transitVehicle?: string;
+      }[];
+    };
+  }>({});
+
+  const [dayPolylines, setDayPolylines] = useState<{
+    walking: string | null;
+    driving: string | null;
+    transit: string | null;
+  }>({ walking: null, driving: null, transit: null });
+  const [mapRouteMode, setMapRouteMode] = useState<
+    "walking" | "driving" | "transit"
+  >("driving");
+
+  const markersToShow =
+    leftPanelView === "details" ? itinerary[selectedDay] ?? [] : attractions;
+
+  const numDays =
+    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const days = Array.from({ length: numDays }, (_, i) => {
+    const date = new Date(start);
+    date.setDate(date.getDate() + i);
+    return date;
+  });
 
   const updateItinerary = (newItinerary: { [day: number]: Attraction[] }) => {
     setItinerary(newItinerary);
@@ -90,6 +137,46 @@ function TripClient({
     };
     geocode();
   }, [destination]);
+
+  // fetch walking/driving/public transport directions for the selected day whenever its attractions change
+  useEffect(() => {
+    const fetchDirections = async () => {
+      const dayAttractions = itinerary[selectedDay] ?? [];
+
+      if (dayAttractions.length < 2) {
+        setDayPolylines({ walking: null, driving: null, transit: null });
+        return;
+      }
+
+      const waypoints = dayAttractions.map((a) => ({
+        lat: a.lat,
+        lng: a.lng,
+      }));
+
+      const res = await fetch("/api/directions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ waypoints }),
+      });
+      const data = await res.json();
+
+      setDayLegs((prev) => ({
+        ...prev,
+        [selectedDay]: {
+          walking: data.walking.legs,
+          driving: data.driving.legs,
+          transit: data.transit.legs,
+        },
+      }));
+      setDayPolylines({
+        walking: data.walking.overviewPolyline,
+        driving: data.driving.overviewPolyline,
+        transit: data.transit.overviewPolyline,
+      });
+    };
+
+    fetchDirections();
+  }, [selectedDay, itinerary]);
 
   // selecting attracction marker on the map will scroll to selected attraction on the attraction card list
   useEffect(() => {
@@ -160,7 +247,7 @@ function TripClient({
           ...(newItinerary[dayNumber] ?? []),
           newInstance,
         ];
-        updateItinerary(newItinerary); 
+        updateItinerary(newItinerary);
 
         // dragging from itinerary -> use existing instance
       } else if (source === "itinerary") {
@@ -181,7 +268,7 @@ function TripClient({
           ...(newItinerary[dayNumber] ?? []),
           attraction,
         ];
-        updateItinerary(newItinerary); 
+        updateItinerary(newItinerary);
       }
     } else {
       const newItinerary = { ...itinerary };
@@ -251,7 +338,7 @@ function TripClient({
         ];
       }
 
-      updateItinerary(newItinerary); 
+      updateItinerary(newItinerary);
     }
   };
 
@@ -262,11 +349,14 @@ function TripClient({
         (a) => a.instanceId !== instanceId
       );
     });
-    updateItinerary(newItinerary); 
+    updateItinerary(newItinerary);
   };
 
   return (
-    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
+    <APIProvider
+      apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}
+      libraries={["geometry"]}
+    >
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
@@ -279,6 +369,21 @@ function TripClient({
       >
         <main className="flex h-screen bg-[#F9F9F9]">
           <div className="p-8 w-1/3 flex flex-col shrink-0">
+            {/* toggle between attraction list and trip details */}
+            <div className="flex justify-end mb-2">
+              <button
+                onClick={() =>
+                  setLeftPanelView(
+                    leftPanelView === "attractions" ? "details" : "attractions"
+                  )
+                }
+                className="px-4 py-2 rounded-full text-sm font-semibold shadow bg-white border hover:bg-gray-50 transition-colors"
+              >
+                {leftPanelView === "attractions"
+                  ? "Trip Details →"
+                  : "← Attractions"}
+              </button>
+            </div>
             {/* text showing location and dates */}
             <h1 className="text-4xl font-bold">
               The Next Station is {destination}{" "}
@@ -287,27 +392,13 @@ function TripClient({
               {" "}
               {start.toDateString()} → {end.toDateString()}{" "}
             </p>
-            {/* attraction search component */}
-            <AttractionSearch
+
+            {/* <AttractionSearch
               lat={center.lat}
               lng={center.lng}
               onResults={setAttractions}
             />
-            {/* attraction card list */}
             <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
-              {/* {attractions.map((attraction) => (
-                                <div key={attraction.placeId} ref={el => { cardRefs.current[attraction.placeId] = el }} 
-                                    className={`border p-3 rounded-lg bg-white cursor-pointer 
-                                        transition-colors ${selectedAttraction?.placeId == attraction.placeId
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'hover:bg-gray-50'
-                                    }`}
-                                    onClick={() => setSelectedAttraction(attraction)}>
-                                    <h3 className="font-semibold">{attraction.name}</h3>
-                                    <p className="text-gray-500 text-sm">{attraction.address}</p>
-                                    <p className="text-sm">Rating: {attraction.rating} ⭐ ({attraction.reviews} reviews)</p>
-                                </div>
-                            ))} */}
               {attractions.map((attraction) => (
                 <DraggableAttractionItem
                   key={attraction.placeId}
@@ -321,7 +412,43 @@ function TripClient({
                   }}
                 />
               ))}
-            </div>
+            </div> */}
+
+            {/* changed to the toggle panel */}
+            {leftPanelView === "attractions" ? (
+              <>
+                {/* attraction search component */}
+                <AttractionSearch
+                  lat={center.lat}
+                  lng={center.lng}
+                  onResults={setAttractions}
+                />
+                {/* attraction card list */}
+                <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
+                  {attractions.map((attraction) => (
+                    <DraggableAttractionItem
+                      key={attraction.placeId}
+                      attraction={attraction}
+                      isSelected={
+                        selectedAttraction?.placeId === attraction.placeId
+                      }
+                      onClick={() => setSelectedAttraction(attraction)}
+                      cardRef={(el) => {
+                        cardRefs.current[attraction.placeId] = el;
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <TripDetailsPanel
+                itinerary={itinerary}
+                days={days}
+                selectedDay={selectedDay}
+                onSelectDay={setSelectedDay}
+                dayLegs={dayLegs}
+              />
+            )}
           </div>
           {/* rendering map on the right spanning 2/3 of the screen */}
           {/* <div className="w-2/3 h-full"> */}
@@ -332,12 +459,31 @@ function TripClient({
             >
               {sidebarOpen ? "Hide Itinerary →" : "← Plan Itinerary"}
             </button>
+            {leftPanelView === "details" && (
+              <div className="absolute top-4 left-4 z-10 flex gap-2 bg-white rounded-full shadow border p-1">
+                {(["driving", "transit", "walking"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setMapRouteMode(mode)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-semibold capitalize transition-colors ${
+                      mapRouteMode === mode
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            )}
             <MapComponent
               destination={destination}
-              attractions={attractions}
+              attractions={markersToShow}
               center={center}
               selectedAttraction={selectedAttraction}
               onSelectAttraction={setSelectedAttraction}
+              routePolyline={dayPolylines[mapRouteMode]}
+              routeColour={getDayColour(selectedDay)}
             />
           </div>
           {/* itinerary sidebar */}

@@ -22,6 +22,16 @@ import { getDayColour } from "@/lib/dayColours";
 import { DayLegs, ModeLeg } from "@/types/directions";
 import { ColouredPolylineSegment } from "../map/Map";
 
+// sort attractions by a combined score of rating and reviews
+function sortAttractions(attractions: Attraction[]): Attraction[] {
+  return [...attractions].sort((a, b) => {
+    // wilson-score-style weighted sort
+    const scoreA = (a.rating ?? 0) * Math.log10(Math.max(a.reviews ?? 1, 10));
+    const scoreB = (b.rating ?? 0) * Math.log10(Math.max(b.reviews ?? 1, 10));
+    return scoreB - scoreA;
+  });
+}
+
 function TripClient({
   itineraryId,
   destination,
@@ -127,7 +137,7 @@ function TripClient({
         `/api/attractions?lat=${data.location.lat}&lng=${data.location.lng}`
       );
       const attractionsData = await attractionsRes.json();
-      setAttractions(attractionsData.attractions);
+      setAttractions(sortAttractions(attractionsData.attractions));
     };
     geocode();
   }, [destination]);
@@ -416,7 +426,7 @@ function TripClient({
           },
         }}
       >
-        <main className="flex h-screen bg-[#F9F9F9]">
+        <main className="flex h-full bg-[#F9F9F9]">
           <div className="p-8 w-1/3 flex flex-col shrink-0">
             {/* toggle between attraction list and trip details */}
             <div className="flex justify-end mb-2">
@@ -470,7 +480,7 @@ function TripClient({
                 <AttractionSearch
                   lat={center.lat}
                   lng={center.lng}
-                  onResults={setAttractions}
+                  onResults={(results) => setAttractions(sortAttractions(results))}
                 />
                 {/* attraction card list */}
                 <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
@@ -539,7 +549,7 @@ function TripClient({
           <div className="flex-1 h-full relative">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="absolute top-4 right-4 z-10 bg-red-500 text-white border rounded-full px-4 py-2 shadow font-semibold hover:bg-red-600 transition-colors"
+              className="absolute top-4 right-15 z-10 bg-red-500 text-white border rounded-full px-4 py-2 shadow font-semibold hover:bg-red-600 transition-colors"
             >
               {sidebarOpen ? "Hide Itinerary →" : "← Plan Itinerary"}
             </button>

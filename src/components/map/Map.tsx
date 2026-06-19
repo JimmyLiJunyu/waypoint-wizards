@@ -162,7 +162,7 @@ function MapInner({
 
   if (!isLoaded) {
     return (
-      <div className="w-full h-screen flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center">
         Loading Map...
       </div>
     );
@@ -172,7 +172,7 @@ function MapInner({
     <Map
       defaultZoom={12}
       defaultCenter={center}
-      className="w-full h-screen"
+      className="w-full h-full"
       mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
     >
       {/* attraction markers */}

@@ -19,6 +19,8 @@ import ItinerarySidebar from "../itinerary/ItinerarySidebar";
 import { arrayMove } from "@dnd-kit/sortable";
 import TripDetailsPanel from "./TripDetailsPanel";
 import { getDayColour } from "@/lib/dayColours";
+import { DayLegs, ModeLeg } from "@/types/directions";
+import { ColouredPolylineSegment } from "../map/Map";
 
 function TripClient({
   itineraryId,
@@ -58,39 +60,31 @@ function TripClient({
     "attractions"
   );
   const [selectedDay, setSelectedDay] = useState(1);
-  const [dayLegs, setDayLegs] = useState<{
-    [day: number]: {
-      walking: {
-        distanceText: string;
-        durationText: string;
-        durationSeconds: number;
-      }[];
-      driving: {
-        distanceText: string;
-        durationText: string;
-        durationSeconds: number;
-      }[];
-      transit: {
-        distanceText: string;
-        durationText: string;
-        durationSeconds: number;
-        transitLine?: string;
-        transitVehicle?: string;
-      }[];
-    };
-  }>({});
+  const [dayLegs, setDayLegs] = useState<{ [day: number]: DayLegs }>({});
 
   const [dayPolylines, setDayPolylines] = useState<{
     walking: string | null;
     driving: string | null;
-    transit: string | null;
+    transit: ColouredPolylineSegment[] | null;
   }>({ walking: null, driving: null, transit: null });
+
   const [mapRouteMode, setMapRouteMode] = useState<
     "walking" | "driving" | "transit"
   >("driving");
 
   const markersToShow =
     leftPanelView === "details" ? itinerary[selectedDay] ?? [] : attractions;
+
+  // map each attraction's key to its order number for the selected day
+  const markerNumbers: { [key: string]: number } =
+    leftPanelView === "details"
+      ? Object.fromEntries(
+          (itinerary[selectedDay] ?? []).map((a, i) => [
+            a.instanceId ?? a.placeId,
+            i + 1,
+          ])
+        )
+      : {};
 
   const numDays =
     Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -138,45 +132,100 @@ function TripClient({
     geocode();
   }, [destination]);
 
-  // fetch walking/driving/public transport directions for the selected day whenever its attractions change
   useEffect(() => {
     const fetchDirections = async () => {
-      const dayAttractions = itinerary[selectedDay] ?? [];
+      // collect every day that has 2+ attractions into a single batch
+      const daysToFetch = Object.keys(itinerary)
+        .map(Number)
+        .filter((day) => (itinerary[day] ?? []).length >= 2);
 
-      if (dayAttractions.length < 2) {
+      if (daysToFetch.length === 0) {
+        setDayLegs({});
         setDayPolylines({ walking: null, driving: null, transit: null });
         return;
       }
 
-      const waypoints = dayAttractions.map((a) => ({
-        lat: a.lat,
-        lng: a.lng,
-      }));
+      // we still only render one day's polyline on the map at a time,
+      // so we keep `dayPolylines` scoped to selectedDay. But `dayLegs`
+      // must be populated for every day so the panel can render them.
+      const legResults = await Promise.all(
+        daysToFetch.map(async (day) => {
+          const dayAttractions = itinerary[day] ?? [];
+          const waypoints = dayAttractions.map((a) => ({
+            lat: a.lat,
+            lng: a.lng,
+          }));
 
-      const res = await fetch("/api/directions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ waypoints }),
-      });
-      const data = await res.json();
+          const res = await fetch("/api/directions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ waypoints }),
+          });
+          const data = await res.json();
 
-      setDayLegs((prev) => ({
-        ...prev,
-        [selectedDay]: {
-          walking: data.walking.legs,
-          driving: data.driving.legs,
-          transit: data.transit.legs,
-        },
-      }));
-      setDayPolylines({
-        walking: data.walking.overviewPolyline,
-        driving: data.driving.overviewPolyline,
-        transit: data.transit.overviewPolyline,
-      });
+          const transitLegs: ModeLeg[] = data.transit.legs ?? [];
+
+          // flatten every leg's walk/transit segments into one ordered list
+          // of coloured polylines so the whole day's journey (across
+          // multiple attraction-to-attraction hops) draws as a single
+          // continuous, colour-coded line on the map
+          const transitColouredSegments: ColouredPolylineSegment[] =
+            transitLegs.flatMap((leg) =>
+              (leg.segments ?? [])
+                .filter((seg) => !!seg.polyline)
+                .map((seg) =>
+                  seg.travelMode === "TRANSIT"
+                    ? {
+                        polyline: seg.polyline as string | string[],
+                        colour: seg.lineColor ?? "#6B7280",
+                      }
+                    : {
+                        polyline: seg.polyline as string | string[],
+                        colour: "#6B7280",
+                        dashed: true,
+                      }
+                )
+            );
+
+          return {
+            day,
+            legs: {
+              walking: data.walking.legs,
+              driving: data.driving.legs,
+              transit: transitLegs,
+            },
+            polylines: {
+              walking: data.walking.overviewPolyline as string | null,
+              driving: data.driving.overviewPolyline as string | null,
+              transit:
+                transitColouredSegments.length > 0
+                  ? transitColouredSegments
+                  : null,
+            },
+          };
+        })
+      );
+
+      const newLegs: typeof dayLegs = {};
+      let selectedPolylines: {
+        walking: string | null;
+        driving: string | null;
+        transit: ColouredPolylineSegment[] | null;
+      } = { walking: null, driving: null, transit: null };
+
+      for (const r of legResults) {
+        newLegs[r.day] = r.legs;
+        if (r.day === selectedDay) {
+          selectedPolylines = r.polylines;
+        }
+      }
+
+      setDayLegs(newLegs);
+      setDayPolylines(selectedPolylines);
     };
 
     fetchDirections();
-  }, [selectedDay, itinerary]);
+  }, [itinerary, selectedDay]);
 
   // selecting attracction marker on the map will scroll to selected attraction on the attraction card list
   useEffect(() => {
@@ -452,7 +501,7 @@ function TripClient({
           </div>
           {/* rendering map on the right spanning 2/3 of the screen */}
           {/* <div className="w-2/3 h-full"> */}
-          <div className="flex-1 h-full relative">
+          {/* <div className="flex-1 h-full relative">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="absolute top-4 right-4 z-10 bg-red-500 text-white border rounded-full px-4 py-2 shadow font-semibold hover:bg-red-600 transition-colors"
@@ -484,6 +533,49 @@ function TripClient({
               onSelectAttraction={setSelectedAttraction}
               routePolyline={dayPolylines[mapRouteMode]}
               routeColour={getDayColour(selectedDay)}
+              markerNumbers={markerNumbers}
+            />
+          </div> */}
+          <div className="flex-1 h-full relative">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="absolute top-4 right-4 z-10 bg-red-500 text-white border rounded-full px-4 py-2 shadow font-semibold hover:bg-red-600 transition-colors"
+            >
+              {sidebarOpen ? "Hide Itinerary →" : "← Plan Itinerary"}
+            </button>
+            {leftPanelView === "details" &&
+              mapRouteMode === "transit" &&
+              !dayPolylines.transit && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-white border rounded-full shadow px-4 py-2 text-sm text-gray-600">
+                  No transit route available for this day
+                </div>
+              )}
+            {leftPanelView === "details" && (
+              <div className="absolute top-16 left-4 z-10 flex gap-2 bg-white rounded-full shadow border p-1">
+                {(["driving", "transit", "walking"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setMapRouteMode(mode)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-semibold capitalize transition-colors ${
+                      mapRouteMode === mode
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            )}
+            <MapComponent
+              destination={destination}
+              attractions={markersToShow}
+              center={center}
+              selectedAttraction={selectedAttraction}
+              onSelectAttraction={setSelectedAttraction}
+              routePolyline={dayPolylines[mapRouteMode]}
+              routeColour={getDayColour(selectedDay)}
+              markerNumbers={markerNumbers}
             />
           </div>
           {/* itinerary sidebar */}

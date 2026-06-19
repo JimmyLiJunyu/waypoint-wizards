@@ -34,11 +34,13 @@ export async function POST(
       address: a.address,
       lat: a.lat,
       lng: a.lng,
-      rating: a.rating,
+      rating: a.rating ?? 0,
       reviews: a.reviews,
       itineraryId,
     }))
   );
+
+  // console.log("items to save:", JSON.stringify(items, null, 2)); 
 
   // delete and replace
   await prisma.$transaction([

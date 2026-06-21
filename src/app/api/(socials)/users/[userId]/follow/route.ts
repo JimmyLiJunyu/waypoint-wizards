@@ -5,7 +5,7 @@ import { getCurrUserId } from "@/lib/auth/tokens";
 
 interface FollowRequestParams {
     params: Promise<{
-        targetId: string
+        userId: string
     }>
 }
 
@@ -14,7 +14,7 @@ export async function POST(request: Request, context: FollowRequestParams) {
         const currUserId = await getCurrUserId();
         if (!currUserId) return NextResponse.json({error: "Unauthorized"}, {status: 401})
 
-        const { targetId: targetUserId } = await context.params
+        const { userId: targetUserId } = await context.params
         const follow = await prisma.follow.create({
             data: {
                 followerId: currUserId,

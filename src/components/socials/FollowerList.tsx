@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUser } from "@/context/UserContext";
+import FollowerCard from "./FollowerCard";
 
 interface Followers {
   id: string;
@@ -23,8 +24,8 @@ export default function FollowerList() {
         const response = await fetch(`/api/users/${user.id}/get-followers`);
         if (!response.ok) throw Error("Error fetching followers.");
 
-        const data = await response.json();
-        setFollowersData(data.followers);
+        const followers = await response.json();
+        setFollowersData(followers);
       } catch (error) {
         if (error instanceof Error) {
           console.log("Internal Server Error: ", error.message);
@@ -45,7 +46,20 @@ export default function FollowerList() {
           {error}
         </div>
       )}
-      
+      <div className="overflow-y-auto max-h-96 flex flex-col gap-1">
+        {dataLoading ? (
+          <h1>Loading...</h1>
+        ) : (
+          followersData.map((user) => (
+            <FollowerCard
+              key={user.id}
+              id={user.id}
+              name={user.name}
+              imageUrl={user.imageUrl}
+            />
+          ))
+        )}
+      </div>
     </>
   );
 }

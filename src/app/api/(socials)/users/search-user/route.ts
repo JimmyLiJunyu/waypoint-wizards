@@ -13,7 +13,19 @@ export async function POST(request: Request) {
             select: {id: true, name: true, imageUrl: true}
         })
 
-        return NextResponse.json(users, {status: 201})
+        const usersWithStatus = await Promise.all(users.map(async (user) => {
+            const follow = await prisma.follow.findUnique({
+                where: {followerId_followingId: {
+                    followerId: userId, followingId: user.id
+                }}
+            })
+            return {
+                ...user,
+                followStatus: follow?.status ?? "NONE"
+            }
+        }))
+
+        return NextResponse.json(usersWithStatus, {status: 201})
     } catch (error) {
         if (error instanceof Error) return NextResponse.json({error: error.message}, {status: 400})
         

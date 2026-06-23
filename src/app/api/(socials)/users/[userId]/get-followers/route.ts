@@ -28,7 +28,7 @@ export async function GET(request: Request, context: RouteParams) {
         console.log(followers)
         return NextResponse.json(followers.map(f => f.follower))
     } catch (error) {
-        if (error instanceof Error) {
+        if (error instanceof Error) {   
             console.log(error)
             return NextResponse.json({error: "Couldnt get followers"}, {status: 400})
         }

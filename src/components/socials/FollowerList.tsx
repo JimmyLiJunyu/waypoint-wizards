@@ -8,9 +8,10 @@ interface Followers {
   id: string;
   name: string;
   imageUrl: string;
+  followBackStatus: "NONE" | "PENDING" | "ACCEPTED";
 }
 
-export default function FollowerList() {
+export default function FollowerList({ refreshToggle } : { refreshToggle: boolean}) {
   const { user, isLoading: isUserLoading } = useUser();
   const [followersData, setFollowersData] = useState<Followers[]>([]);
   const [error, setError] = useState("");
@@ -37,7 +38,7 @@ export default function FollowerList() {
     }
 
     fetchFollowers();
-  }, [user, user?.id, isUserLoading]);
+  }, [user, user?.id, isUserLoading, refreshToggle]);
 
   return (
     <>
@@ -56,6 +57,7 @@ export default function FollowerList() {
               id={user.id}
               name={user.name}
               imageUrl={user.imageUrl}
+              followBackStatus={user.followBackStatus}
             />
           ))
         )}

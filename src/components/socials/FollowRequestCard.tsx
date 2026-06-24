@@ -11,7 +11,8 @@ interface FollowerCardProps {
   name: string,
   imageUrl: string | null,
   followStatus: string,
-  onReject: (id: string) => void
+  onReject: (id: string) => void,
+  onAccept: () => void
 }
 
 export default function FollowRequestCard({
@@ -19,14 +20,17 @@ export default function FollowRequestCard({
   name,
   imageUrl,
   followStatus,
-  onReject
+  onReject,
+  onAccept
 }: FollowerCardProps) {
   const router = useRouter();
   const { user } = useUser();
   const [status, setStatus] = useState(followStatus);
   const [followedBack, setFollowedBack] = useState(false)
+  const [followedBackStatus, setFollowedBackStatus] = useState<"PENDING" | "NONE">("NONE")
 
   const isOwnAccount = user?.id === id;
+  
 
   async function handleAccept(e: React.MouseEvent) {
     e.stopPropagation();
@@ -41,6 +45,7 @@ export default function FollowRequestCard({
       const { isFollowing } = await check.json();
       setFollowedBack(isFollowing);
       setStatus('ACCEPTED')
+      onAccept()
     }
   }
 
@@ -59,7 +64,10 @@ export default function FollowRequestCard({
     const response = await fetch(`/api/users/${id}/follow`, {
       method: "POST",
     });
-    if (response.ok) setStatus("PENDING");
+    if (response.ok) {
+      setStatus("PENDING");
+      setFollowedBackStatus("PENDING")
+    }
   }
 
   return (
@@ -79,7 +87,7 @@ export default function FollowRequestCard({
         <User className="size-5" />
       )}
       <span className="font-medium flex-1">{name}</span>
-      {!isOwnAccount && status === "PENDING" && (
+      {status === "PENDING" && (
         <>
             <button onClick={handleAccept} className="text-sm px-3 py-1 rounded-full bg-green-500 text-white hover:bg-green-600">
                 Accept
@@ -91,12 +99,15 @@ export default function FollowRequestCard({
         </>
       )}
 
-      {!isOwnAccount && status === "ACCEPTED" && (
+      {status === "ACCEPTED" && (
         <>
-          {followedBack ? 
-              <span className="text-sm text-gray-400">Following</span> : 
-              <button onClick={handleFollowBack} className="text-sm px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600">Follow Back</button>    
-          }
+          {status === "ACCEPTED" && (
+            followedBack || followedBackStatus === "PENDING"
+                 ? <span className="text-sm text-gray-400">{followedBack ? "Following" : "Requested"}</span>
+                 : <button onClick={handleFollowBack} className="text-sm px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600">
+                  Follow Back
+                 </button>
+          )}
         </>
       )
 

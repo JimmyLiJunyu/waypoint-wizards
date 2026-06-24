@@ -13,13 +13,13 @@ export async function GET(request: Request) {
                 status: "PENDING",
             }, 
             include: {
-                follower: {
+                following: {
                     select: {id: true, name: true, imageUrl: true}
             }
             }
         })
-
-        return NextResponse.json(data.map(f => f.follower), {status: 200})
+        console.log(data)
+        return NextResponse.json(data.map(f => f.following), {status: 200})
     } catch (error) {
         if (error instanceof Error) {
             return NextResponse.json({error: error.message}, {status: 400})

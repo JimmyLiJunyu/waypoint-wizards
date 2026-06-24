@@ -7,6 +7,16 @@ interface RouteParams {
     }>
 };
 
+type FollowerWithUser = {
+    followerId: string;
+    followingId: string;
+    status: string;
+    following: {
+        id: string
+        name: string
+        imageUrl: string | null
+    }
+}
 
 
 export async function GET(request: Request, context: RouteParams) {
@@ -20,13 +30,21 @@ export async function GET(request: Request, context: RouteParams) {
                 status: "ACCEPTED"
             },
             include: {
-                follower: {
+                following: {
                     select: {id: true, name: true, imageUrl: true}
                 }
             }
         })
-        console.log(followers)
-        return NextResponse.json(followers.map(f => f.follower))
+        const userWithStatus = await Promise.all(followers.map(async (f: FollowerWithUser) => {
+            const followBack = await prisma.follow.findUnique({
+                where: {followerId_followingId: {followerId: userId, followingId: f.following.id}}
+            })
+            return {
+                ...f.following,
+                followBackStatus: followBack?.status ?? "NONE"
+            }
+        }))
+        return NextResponse.json(userWithStatus);
     } catch (error) {
         if (error instanceof Error) {   
             console.log(error)

@@ -1,8 +1,13 @@
+"use client"
+
 import FollowerList from '@/components/socials/FollowerList'
 import UserSearch from '@/components/socials/UserSearch'
 import RequestList from '@/components/socials/RequestList'
+import { useState } from 'react'
 
 function SocialsDashboard() {
+    const [refreshToggle, setRefreshToggle] = useState(false)
+
     return (
         <>
             <main className="min-h-screen bg-[#F9F9F9] p-8">
@@ -14,9 +19,9 @@ function SocialsDashboard() {
 
                     <div className="flex items-center gap-4 mb-6">
                         <UserSearch/>
-                        <RequestList/>
+                        <RequestList onAccept={() => setRefreshToggle(r => !r)}/>
                     </div>
-                    <FollowerList/>
+                    <FollowerList refreshToggle={refreshToggle}/>
                 </div>
             </main>
         </>

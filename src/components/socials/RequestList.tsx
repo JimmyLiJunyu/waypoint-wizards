@@ -9,7 +9,7 @@ interface FollowerRequest {
   imageUrl: string;
 }
 
-export default function RequestList() {
+export default function RequestList({onAccept} : {onAccept: () => void}) {
   const [isOpen, setIsOpen] = useState(false);
   const [data, setData] = useState<FollowerRequest[]>([]);
   const [error, setError] = useState("");
@@ -80,9 +80,8 @@ export default function RequestList() {
                   name={req.name}
                   imageUrl={req.imageUrl}
                   followStatus={"PENDING"}
-                  onReject={(id: string) =>
-                    setData((prev) => prev.filter((r) => r.id !== id))
-                  }
+                  onReject={(id: string) => setData(prev => prev.filter(r => r.id !== id))}
+                  onAccept={onAccept}
                 />
               ))
             )}

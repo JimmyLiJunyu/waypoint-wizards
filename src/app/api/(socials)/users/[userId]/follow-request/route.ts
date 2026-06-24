@@ -7,10 +7,15 @@ export async function PATCH(request: Request, context: { params: Promise<{
 }>}) {
 
     try {
+        
         const currUserId = await getCurrUserId();
+        console.log("CurrUserId", currUserId)
         if (!currUserId) return NextResponse.json({error: "Unauthorized"}, {status: 401})
         const { action } = await request.json();
+        console.log("Action: ", action)
         const { userId: requestedFrom } = await context.params
+        console.log("UserID: ", requestedFrom)
+
 
         if (action === "ACCEPT") {
             await prisma.follow.update({
@@ -30,7 +35,8 @@ export async function PATCH(request: Request, context: { params: Promise<{
         }
 
         return NextResponse.json({success: true}, {status: 200})
-    } catch(error) {
+    } catch (error) {
+        console.log(error)
         return NextResponse.json({error: error}, {status: 400})
     }
 

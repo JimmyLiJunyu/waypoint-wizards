@@ -27,7 +27,7 @@ model Follow {
 model User {
   id         String         @id @default(uuid())
   email      String         @unique
-  name       String?
+  name       String         @unique
   imageUrl   String?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt

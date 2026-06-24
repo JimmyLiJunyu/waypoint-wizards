@@ -5,13 +5,13 @@ import { createUser } from '@/services/userServices';
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const { email, name, password } = await request.json();
 
-    if (!email || !password) {
+    if (!email || !name || !password) {
       return NextResponse.json({ error: "Missing email or password!" });
     }
 
-    await createUser({ email, password });
+    await createUser({ email, name, password });
 
     return NextResponse.json({
       success: true,

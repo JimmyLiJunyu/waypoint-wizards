@@ -12,6 +12,7 @@ function SignUpForm() {
   const [error, setError] = useState("");
   const [valid, setValid] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState("")
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -23,7 +24,7 @@ function SignUpForm() {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, name, password }),
       });
 
       const data = await response.json();
@@ -59,6 +60,14 @@ function SignUpForm() {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 rounded"
+        />
+
+        <input
+          type="name"
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           className="border p-2 rounded"
         />
 

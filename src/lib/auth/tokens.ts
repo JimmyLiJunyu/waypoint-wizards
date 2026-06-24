@@ -1,4 +1,6 @@
 import * as jose from 'jose';
+import { cookies } from 'next/headers'
+
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret_key');
 
@@ -17,4 +19,13 @@ export async function verifyJWT(token: string) {
     } catch (error) {
         return null;
     }
+}
+
+export async function getCurrUserId() {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token')?.value
+    if (!token) return null
+    const payload = await verifyJWT(token)
+    return payload ? String(payload.userId) : null
+
 }

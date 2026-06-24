@@ -14,10 +14,17 @@ export async function createUser(data: Prisma.UserCreateInput) {
         throw new Error("Email already registered");
     }
 
+    const existingName = await prisma.user.findUnique({
+        where: {name: data.name.toLowerCase()}
+    })
+
+    if (existingName) throw new Error("Name already taken.");
+
     const hashedPassword = await bcrypt.hash(data.password, 10);
     return await prisma.user.create({
         data: {
             email: normalizedEmail,
+            name: data.name,
             password: hashedPassword
         }
     });

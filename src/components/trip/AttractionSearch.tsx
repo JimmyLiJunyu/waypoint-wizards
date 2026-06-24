@@ -1,6 +1,8 @@
 'use client'
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Attraction } from "@/types/attractions";
+
+const DEBOUNCE_MS = 350;
 
 function AttractionSearch({ lat, lng, onResults } : {
     lat: number;
@@ -9,16 +11,50 @@ function AttractionSearch({ lat, lng, onResults } : {
 }) {
     const [query, setQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    // tracks whether the most recent search was triggered by the debounce effect
+    const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    async function handleSearch() {
-        if (!query) {
+    async function runSearch(searchQuery: string) {
+        if (!searchQuery) {
+            // query cleared to restore the default nearby attractions list
+            setIsLoading(true);
+            const response = await fetch(`/api/attractions?lat=${lat}&lng=${lng}`);
+            const data = await response.json();
+            onResults(data.attractions);
+            setIsLoading(false);
             return;
         }
+
         setIsLoading(true);
-        const response = await fetch(`/api/attractions?lat=${lat}&lng=${lng}&query=${encodeURIComponent(query)}`);
+        const response = await fetch(`/api/attractions?lat=${lat}&lng=${lng}&query=${encodeURIComponent(searchQuery)}`);
         const data = await response.json();
         onResults(data.attractions);
         setIsLoading(false);
+    }
+
+    // search as the user types
+    useEffect(() => {
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
+
+        debounceTimeout.current = setTimeout(() => {
+            runSearch(query);
+        }, DEBOUNCE_MS);
+
+        return () => {
+            if (debounceTimeout.current) {
+                clearTimeout(debounceTimeout.current);
+            }
+        };
+    }, [query]);
+
+    // manual search trigger
+    function handleSearch() {
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
+        runSearch(query);
     }
 
     return (

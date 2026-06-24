@@ -7,20 +7,15 @@ datasource db {
   provider = "postgresql"
 }
 
-enum FollowStatus {
-  PENDING
-  ACCEPTED
-}
-
 model Follow {
-  followerId String
+  followerId  String
   followingId String
-  status FollowStatus @default(PENDING)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status      FollowStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  following   User         @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  follower    User         @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
 
-  follower User @relation("UserFollowing", fields: [followingId], references: id, onDelete: Cascade)
-  following User @relation("UserFollowers", fields: [followerId], references: id, onDelete: Cascade)
   @@id([followerId, followingId])
 }
 
@@ -33,10 +28,8 @@ model User {
   updatedAt  DateTime       @updatedAt
   password   String
   itinearies Collaborator[]
-
-  // relations for following system
-  following Follow[] @relation("UserFollowing")
-  followers Follow[] @relation("UserFollowers")
+  followers  Follow[]       @relation("UserFollowers")
+  following  Follow[]       @relation("UserFollowing")
 }
 
 model Destination {
@@ -50,14 +43,14 @@ model Destination {
 }
 
 model Itinerary {
-  id            String         @id @default(uuid())
-  title         String
-  createdAt     DateTime       @default(now())
-  location      String
-  startDate     DateTime
-  endDate       DateTime
-  collaborators Collaborator[]
-  destinations  Destination[]
+  id             String          @id @default(uuid())
+  title          String
+  createdAt      DateTime        @default(now())
+  location       String
+  startDate      DateTime
+  endDate        DateTime
+  collaborators  Collaborator[]
+  destinations   Destination[]
   itineraryItems ItineraryItem[]
 }
 
@@ -73,9 +66,9 @@ model Collaborator {
 }
 
 model ItineraryItem {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   dayNumber   Int
-  position    Int      // order of attractions
+  position    Int
   placeId     String
   name        String
   address     String
@@ -83,8 +76,12 @@ model ItineraryItem {
   lng         Float
   rating      Float
   reviews     Int
-  instanceId  String   // the client-side instanceId
-
+  instanceId  String
   itineraryId String
   itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+}
+
+enum FollowStatus {
+  PENDING
+  ACCEPTED
 }

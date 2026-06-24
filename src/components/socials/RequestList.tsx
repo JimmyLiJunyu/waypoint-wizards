@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import FollowerSearchCard from "./FollowerSearchCard";
+import FollowRequestCard from "./FollowRequestCard";
 
 interface FollowerRequest {
   id: string;
@@ -74,12 +74,15 @@ export default function RequestList() {
               <h1>Loading...</h1>
             ) : (
               data.map((req) => (
-                <FollowerSearchCard
+                <FollowRequestCard
                   key={req.id}
                   id={req.id}
                   name={req.name}
                   imageUrl={req.imageUrl}
                   followStatus={"PENDING"}
+                  onReject={(id: string) =>
+                    setData((prev) => prev.filter((r) => r.id !== id))
+                  }
                 />
               ))
             )}

@@ -3,7 +3,6 @@
 import { updateProfile } from "./action";
 import { useUser } from "@/context/UserContext";
 import { useState } from "react";
-import { supabase } from '@/lib/supabase'
 import Image from "next/image";
 import {
   User,
@@ -29,16 +28,17 @@ function AccountPage() {
     const file = e.target.files?.[0]
     if (!file || !user) return
 
-    const { error } = await supabase.storage
-      .from('profile-picture')
-      .upload(`${user.id}/avatar`, file, { upsert: true })
-    
-    if (error) { setError("Image upload failed"); return;}
+    const formData = new FormData()
+    formData.append("file", file)
 
-    const { data: { publicUrl }} = supabase.storage
-      .from('profile-picture')
-      .getPublicUrl(`${user.id}/avatar`);
+    const res = await fetch("/api/upload-avatar", {
+      method: "POST",
+      body: formData,
+    })
 
+    if (!res.ok) { setError("Image upload failed"); return }
+
+    const { publicUrl } = await res.json()
     setImage(publicUrl)
   }
 

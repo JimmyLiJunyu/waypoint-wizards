@@ -1,6 +1,5 @@
 import { createClient, LiveList, LiveMap, LiveObject } from "@liveblocks/client"
 import { createRoomContext } from "@liveblocks/react"
-import { Liveblocks as LiveblocksNode } from "@liveblocks/node"
 
 export type AttractionEntry = {
     placeId: string;
@@ -28,7 +27,3 @@ const client = createClient({
 })
 
 export const { RoomProvider, useStorage, useMutation, useMyPresence, useOthers, useSelf } = createRoomContext<Presence, Storage>(client)
-
-export const liveblocks = new LiveblocksNode({
-    secret: process.env.LIVEBLOCKS_SECRET_KEY!,
-})

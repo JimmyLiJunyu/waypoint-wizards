@@ -120,7 +120,8 @@ function TripInner({
 
   const itinerary = useStorage((root) => {
     const result: { [day: number]: Attraction[] } = {};
-    (root.itinerary as unknown as Map<string, AttractionEntry[]>).forEach((list, dayStr) => {
+    const entries = Object.entries(root.itinerary as unknown as Record<string, AttractionEntry[]>);
+    entries.forEach(([dayStr, list]) => {
       result[parseInt(dayStr)] = list.map((obj) => ({ ...obj }));
     });
     return result;
@@ -171,13 +172,24 @@ function TripInner({
         .findIndex((o: LiveObject<AttractionEntry>) => o.get("instanceId") === params.instanceId);
       if (fromIndex === -1) return;
       const obj = fromList.get(fromIndex)!;
+      const data: AttractionEntry = {
+        placeId: obj.get("placeId"),
+        instanceId: obj.get("instanceId"),
+        name: obj.get("name"),
+        address: obj.get("address"),
+        lat: obj.get("lat"),
+        lng: obj.get("lng"),
+        rating: obj.get("rating"),
+        reviews: obj.get("reviews"),
+      };
       fromList.delete(fromIndex);
       const toList = lb.get(String(params.toDay));
       if (!toList) return;
+      const newObj = new LiveObject(data);
       if (params.toIndex === -1) {
-        toList.push(obj);
+        toList.push(newObj);
       } else {
-        toList.insert(obj, params.toIndex);
+        toList.insert(newObj, params.toIndex);
       }
     },
     []

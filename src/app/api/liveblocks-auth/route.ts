@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getCurrUserId } from "@/lib/auth/tokens"
 import { prisma } from "@/lib/prisma"
-import { liveblocks } from "@/lib/liveblocks"
+import { liveblocks } from "@/lib/liveblocks-server"
 
 
 export async function POST(request: NextRequest) {

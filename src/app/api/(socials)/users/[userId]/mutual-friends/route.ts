@@ -16,11 +16,15 @@ export async function GET(request: NextRequest, {params}: {params: Promise<{user
         const mutualFriends = await prisma.user.findMany({
             where: {
                 AND: [
-                    {followers: {some: {followerId: callerId, status: "ACCEPTED"}}},
-                    {following: {some: {followingId: callerId, status: "ACCEPTED"}}},
+                    // callerId follows them: Follow(followerId=callerId, followingId=them)
+                    // lives in them.following (Follow records where followingId=them.id)
+                    {following: {some: {followerId: callerId, status: "ACCEPTED"}}},
+                    // they follow callerId: Follow(followerId=them, followingId=callerId)
+                    // lives in them.followers (Follow records where followerId=them.id)
+                    {followers: {some: {followingId: callerId, status: "ACCEPTED"}}},
                     {id : { not: callerId }},
                     ...(itineraryId
-                        ? [{itineraries: {none: {itineraryId}}}]
+                        ? [{itinearies: {none: {itineraryId}}}]
                         : []
                     ),
                 ]

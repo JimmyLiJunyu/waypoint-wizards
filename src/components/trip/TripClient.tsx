@@ -86,7 +86,7 @@ function TripClient({
                     address: a.address,
                     lat: a.lat,
                     lng: a.lng,
-                    rating: a.rating,
+                    rating: a.rating ?? 0,
                     reviews: a.reviews,
                   })
               )
@@ -139,7 +139,7 @@ function TripInner({
       result[parseInt(dayStr)] = list.map((obj) => ({ ...obj }));
     });
     return result;
-  });
+  }) ?? {};
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null);
@@ -201,7 +201,7 @@ function TripInner({
           address: attraction.address,
           lat: attraction.lat,
           lng: attraction.lng,
-          rating: attraction.rating,
+          rating: attraction.rating ?? 0,
           reviews: attraction.reviews,
         })
       );
@@ -367,8 +367,6 @@ function TripInner({
       });
     }
   }, [selectedAttraction]);
-
-  if (!itinerary) return <div>Connecting...</div>;
 
   const handleSave = async () => {
     setIsSaving(true);

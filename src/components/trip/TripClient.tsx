@@ -21,6 +21,10 @@ import TripDetailsPanel from "./TripDetailsPanel";
 import { getDayColour } from "@/lib/dayColours";
 import { DayLegs, ModeLeg } from "@/types/directions";
 import { ColouredPolylineSegment } from "../map/Map";
+import CollaboratorPanel from "./CollaboratorPanel";
+import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
+import { RoomProvider, useStorage, useMutation, useMyPresence, useOthers } from "@/lib/liveblocks";
+import { AttractionEntry } from "@/lib/liveblocks";
 
 // sort attractions by a combined score of rating and reviews
 function sortAttractions(attractions: Attraction[]): Attraction[] {
@@ -31,11 +35,6 @@ function sortAttractions(attractions: Attraction[]): Attraction[] {
     return scoreB - scoreA;
   });
 }
-
-import CollaboratorPanel from "./CollaboratorPanel";
-import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
-import { RoomProvider, useStorage, useMutation, useMyPresence, useOthers } from "@/lib/liveblocks";
-import { AttractionEntry } from "@/lib/liveblocks";
 
 type CollaboratorUser = {
   id: string;
@@ -151,26 +150,25 @@ function TripInner({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details">(
-    "attractions"
-  );
+
+  // Trip details / routing state (from HEAD)
+  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details">("attractions");
   const [selectedDay, setSelectedDay] = useState(1);
   const [dayLegs, setDayLegs] = useState<{ [day: number]: DayLegs }>({});
-
   const [dayPolylines, setDayPolylines] = useState<{
     walking: string | null;
     driving: string | null;
     transit: ColouredPolylineSegment[] | null;
   }>({ walking: null, driving: null, transit: null });
+  const [mapRouteMode, setMapRouteMode] = useState<"walking" | "driving" | "transit">("driving");
 
-  const [mapRouteMode, setMapRouteMode] = useState<
-    "walking" | "driving" | "transit"
-  >("driving");
+  // Liveblocks presence (from bbfb425)
+  const [, updateMyPresence] = useMyPresence();
+  const others = useOthers();
 
   const markersToShow =
     leftPanelView === "details" ? itinerary[selectedDay] ?? [] : attractions;
 
-  // map each attraction's key to its order number for the selected day
   const markerNumbers: { [key: string]: number } =
     leftPanelView === "details"
       ? Object.fromEntries(
@@ -189,30 +187,7 @@ function TripInner({
     return date;
   });
 
-  const updateItinerary = (newItinerary: { [day: number]: Attraction[] }) => {
-    setItinerary(newItinerary);
-    setHasUnsavedChanges(true);
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await fetch(`/api/itinerary/${itineraryId}/save`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itinerary }),
-      });
-      setHasUnsavedChanges(false);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // first fetch is for the location coordinates (from api/geocode), second fetch is for attractions based on the coordinates
-  // attraction fetched is only 5km from the coordinates (can be changed in api/attractions)
-  const [, updateMyPresence] = useMyPresence();
-  const others = useOthers();
-
+  // Liveblocks mutations (from bbfb425)
   const addAttractionToDay = useMutation(
     ({ storage }, dayNumber: number, attraction: Attraction) => {
       const lb = storage.get("itinerary");
@@ -299,7 +274,6 @@ function TripInner({
 
   useEffect(() => {
     const fetchDirections = async () => {
-      // collect every day that has 2+ attractions into a single batch
       const daysToFetch = Object.keys(itinerary)
         .map(Number)
         .filter((day) => (itinerary[day] ?? []).length >= 2);
@@ -310,9 +284,6 @@ function TripInner({
         return;
       }
 
-      // we still only render one day's polyline on the map at a time,
-      // so we keep `dayPolylines` scoped to selectedDay. But `dayLegs`
-      // must be populated for every day so the panel can render them.
       const legResults = await Promise.all(
         daysToFetch.map(async (day) => {
           const dayAttractions = itinerary[day] ?? [];
@@ -330,10 +301,6 @@ function TripInner({
 
           const transitLegs: ModeLeg[] = data.transit.legs ?? [];
 
-          // flatten every leg's walk/transit segments into one ordered list
-          // of coloured polylines so the whole day's journey (across
-          // multiple attraction-to-attraction hops) draws as a single
-          // continuous, colour-coded line on the map
           const transitColouredSegments: ColouredPolylineSegment[] =
             transitLegs.flatMap((leg) =>
               (leg.segments ?? [])
@@ -452,47 +419,10 @@ function TripInner({
 
       if (source === "list") {
         const attraction = attractions.find((a) => a.placeId === activeId);
-
-        if (!attraction) {
-          return;
-        }
-
-        // creating new instance
-        const newInstance: Attraction = {
-          ...attraction,
-          instanceId: `${attraction.placeId}-${Date.now()}`,
-        };
-
-        const newItinerary = { ...itinerary };
-        newItinerary[dayNumber] = [
-          ...(newItinerary[dayNumber] ?? []),
-          newInstance,
-        ];
-        updateItinerary(newItinerary);
-
-        // dragging from itinerary -> use existing instance
         if (!attraction) return;
         addAttractionToDay(dayNumber, attraction);
         setHasUnsavedChanges(true);
       } else if (source === "itinerary") {
-        // find from existing itinerary
-        const attraction = Object.values(itinerary)
-          .flat()
-          .find((a) => a.instanceId === activeId);
-        if (!attraction) {
-          return;
-        }
-        const newItinerary = { ...itinerary };
-        Object.keys(newItinerary).forEach((day) => {
-          newItinerary[parseInt(day)] = newItinerary[parseInt(day)].filter(
-            (a) => a.instanceId !== activeId
-          );
-        });
-        newItinerary[dayNumber] = [
-          ...(newItinerary[dayNumber] ?? []),
-          attraction,
-        ];
-        updateItinerary(newItinerary);
         const activeDayNumber = parseInt(
           Object.keys(itinerary).find((day) =>
             itinerary[parseInt(day)].some((a) => a.instanceId === activeId)
@@ -526,20 +456,11 @@ function TripInner({
         const overIndex = itinerary[overDayNumber].findIndex((a) => a.instanceId === overId);
         moveAttraction({ instanceId: activeId, fromDay: activeDayNumber, toDay: overDayNumber, toIndex: overIndex });
       }
-
-      updateItinerary(newItinerary);
       setHasUnsavedChanges(true);
     }
   };
 
   const handleRemove = (instanceId: string) => {
-    const newItinerary = { ...itinerary };
-    Object.keys(newItinerary).forEach((day) => {
-      newItinerary[parseInt(day)] = newItinerary[parseInt(day)].filter(
-        (a) => a.instanceId !== instanceId
-      );
-    });
-    updateItinerary(newItinerary);
     removeAttraction(instanceId);
     setHasUnsavedChanges(true);
   };
@@ -559,7 +480,6 @@ function TripInner({
           },
         }}
       >
-        <main className="flex h-full bg-[#F9F9F9]">
         <main
           className="flex h-screen bg-[#F9F9F9]"
           onPointerMove={(e) =>
@@ -567,6 +487,7 @@ function TripInner({
           }
           onPointerLeave={() => updateMyPresence({ cursor: null })}
         >
+          {/* Live cursors for other collaborators */}
           {others.map((other) =>
             other.presence.cursor ? (
               <div
@@ -590,7 +511,7 @@ function TripInner({
           )}
 
           <div className="p-8 w-1/3 flex flex-col shrink-0">
-            {/* toggle between attraction list and trip details */}
+            {/* Toggle between attraction list and trip details */}
             <div className="flex justify-end mb-2">
               <button
                 onClick={() =>
@@ -605,7 +526,7 @@ function TripInner({
                   : "← Attractions"}
               </button>
             </div>
-            {/* text showing location and dates */}
+
             <h1 className="text-4xl font-bold">
               The Next Station is {destination}{" "}
             </h1>
@@ -613,38 +534,13 @@ function TripInner({
               {start.toDateString()} → {end.toDateString()}
             </p>
 
-            {/* <AttractionSearch
-            <AttractionSearch
-              lat={center.lat}
-              lng={center.lng}
-              onResults={setAttractions}
-            />
-            <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
-              {attractions.map((attraction) => (
-                <DraggableAttractionItem
-                  key={attraction.placeId}
-                  attraction={attraction}
-                  isSelected={
-                    selectedAttraction?.placeId === attraction.placeId
-                  }
-                  onClick={() => setSelectedAttraction(attraction)}
-                  cardRef={(el) => {
-                    cardRefs.current[attraction.placeId] = el;
-                  }}
-                />
-              ))}
-            </div> */}
-
-            {/* changed to the toggle panel */}
             {leftPanelView === "attractions" ? (
               <>
-                {/* attraction search component */}
                 <AttractionSearch
                   lat={center.lat}
                   lng={center.lng}
                   onResults={(results) => setAttractions(sortAttractions(results))}
                 />
-                {/* attraction card list */}
                 <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
                   {attractions.map((attraction) => (
                     <DraggableAttractionItem
@@ -670,58 +566,8 @@ function TripInner({
                 dayLegs={dayLegs}
               />
             )}
-              {attractions.map((attraction) => (
-                <DraggableAttractionItem
-                  key={attraction.placeId}
-                  attraction={attraction}
-                  isSelected={selectedAttraction?.placeId === attraction.placeId}
-                  onClick={() => setSelectedAttraction(attraction)}
-                  cardRef={(el) => {
-                    cardRefs.current[attraction.placeId] = el;
-                  }}
-                />
-              ))}
-            </div>
           </div>
-          {/* rendering map on the right spanning 2/3 of the screen */}
-          {/* <div className="w-2/3 h-full"> */}
-          {/* <div className="flex-1 h-full relative">
 
-          <div className="flex-1 h-full relative">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="absolute top-4 right-4 z-10 bg-red-500 text-white border rounded-full px-4 py-2 shadow font-semibold hover:bg-red-600 transition-colors"
-            >
-              {sidebarOpen ? "Hide Itinerary →" : "← Plan Itinerary"}
-            </button>
-            {leftPanelView === "details" && (
-              <div className="absolute top-4 left-4 z-10 flex gap-2 bg-white rounded-full shadow border p-1">
-                {(["driving", "transit", "walking"] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => setMapRouteMode(mode)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-semibold capitalize transition-colors ${
-                      mapRouteMode === mode
-                        ? "bg-gray-900 text-white"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-            )}
-            <MapComponent
-              destination={destination}
-              attractions={markersToShow}
-              center={center}
-              selectedAttraction={selectedAttraction}
-              onSelectAttraction={setSelectedAttraction}
-              routePolyline={dayPolylines[mapRouteMode]}
-              routeColour={getDayColour(selectedDay)}
-              markerNumbers={markerNumbers}
-            />
-          </div> */}
           <div className="flex-1 h-full relative">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -729,6 +575,7 @@ function TripInner({
             >
               {sidebarOpen ? "Hide Itinerary →" : "← Plan Itinerary"}
             </button>
+
             {leftPanelView === "details" &&
               mapRouteMode === "transit" &&
               !dayPolylines.transit && (
@@ -736,6 +583,7 @@ function TripInner({
                   No transit route available for this day
                 </div>
               )}
+
             {leftPanelView === "details" && (
               <div className="absolute top-16 left-4 z-10 flex gap-2 bg-white rounded-full shadow border p-1">
                 {(["driving", "transit", "walking"] as const).map((mode) => (
@@ -753,6 +601,7 @@ function TripInner({
                 ))}
               </div>
             )}
+
             <MapComponent
               destination={destination}
               attractions={markersToShow}
@@ -771,6 +620,7 @@ function TripInner({
             currentUserRole={currentUserRole}
             initialCollaborators={collaborators}
           />
+
           <ItinerarySidebar
             startDate={startDate}
             endDate={endDate}

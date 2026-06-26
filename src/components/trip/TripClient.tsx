@@ -16,7 +16,24 @@ import {
 } from "@dnd-kit/core";
 import DraggableAttractionItem from "../itinerary/DraggableAttractionItem";
 import ItinerarySidebar from "../itinerary/ItinerarySidebar";
-import { arrayMove } from "@dnd-kit/sortable";
+
+import CollaboratorPanel from "./CollaboratorPanel";
+import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
+import { RoomProvider, useStorage, useMutation, useMyPresence, useOthers } from "@/lib/liveblocks";
+import { AttractionEntry } from "@/lib/liveblocks";
+
+type CollaboratorUser = {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+};
+
+type CollaboratorRecord = {
+  id: number;
+  role: string;
+  userId: string;
+  user: CollaboratorUser;
+};
 
 function TripClient({
   itineraryId,
@@ -24,27 +41,94 @@ function TripClient({
   startDate,
   endDate,
   savedItinerary,
+  currentUserId,
+  currentUserRole,
+  collaborators,
 }: {
   itineraryId: string;
   destination: string;
   startDate: string;
   endDate: string;
   savedItinerary: { [day: number]: Attraction[] };
+  currentUserId: string;
+  currentUserRole: string;
+  collaborators: CollaboratorRecord[];
+}) {
+  return (
+    <RoomProvider
+      id={itineraryId}
+      initialPresence={{ cursor: null, name: "", imageUrl: null }}
+      initialStorage={() => ({
+        itinerary: new LiveMap(
+          Object.entries(savedItinerary).map(([day, attractions]) => [
+            day,
+            new LiveList(
+              attractions.map(
+                (a) =>
+                  new LiveObject({
+                    placeId: a.placeId,
+                    instanceId: a.instanceId ?? a.placeId,
+                    name: a.name,
+                    address: a.address,
+                    lat: a.lat,
+                    lng: a.lng,
+                    rating: a.rating,
+                    reviews: a.reviews,
+                  })
+              )
+            ),
+          ])
+        ),
+      })}
+    >
+      <TripInner
+        itineraryId={itineraryId}
+        destination={destination}
+        startDate={startDate}
+        endDate={endDate}
+        currentUserId={currentUserId}
+        currentUserRole={currentUserRole}
+        collaborators={collaborators}
+      />
+    </RoomProvider>
+  );
+}
+
+function TripInner({
+  itineraryId,
+  destination,
+  startDate,
+  endDate,
+  currentUserId,
+  currentUserRole,
+  collaborators,
+}: {
+  itineraryId: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  currentUserId: string;
+  currentUserRole: string;
+  collaborators: CollaboratorRecord[];
 }) {
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [center, setCenter] = useState({ lat: 1.3521, lng: 103.8198 });
   const start = new Date(startDate);
   const end = new Date(endDate);
-  const [selectedAttraction, setSelectedAttraction] =
-    useState<Attraction | null>(null);
+  const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
   const cardRefs = useRef<{ [placeId: string]: HTMLDivElement | null }>({});
-  const [itinerary, setItinerary] = useState<{ [day: number]: Attraction[] }>(
-    savedItinerary
-  );
+
+  const itinerary = useStorage((root) => {
+    const result: { [day: number]: Attraction[] } = {};
+    const entries = Object.entries(root.itinerary as unknown as Record<string, AttractionEntry[]>);
+    entries.forEach(([dayStr, list]) => {
+      result[parseInt(dayStr)] = list.map((obj) => ({ ...obj }));
+    });
+    return result;
+  });
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(
-    null
-  );
+  const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
@@ -52,28 +136,76 @@ function TripClient({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [, updateMyPresence] = useMyPresence();
+  const others = useOthers();
 
-  const updateItinerary = (newItinerary: { [day: number]: Attraction[] }) => {
-    setItinerary(newItinerary);
-    setHasUnsavedChanges(true);
-  };
+  const addAttractionToDay = useMutation(
+    ({ storage }, dayNumber: number, attraction: Attraction) => {
+      const lb = storage.get("itinerary");
+      const key = String(dayNumber);
+      if (!lb.has(key)) lb.set(key, new LiveList([]));
+      lb.get(key)!.push(
+        new LiveObject({
+          placeId: attraction.placeId,
+          instanceId: `${attraction.placeId}-${Date.now()}`,
+          name: attraction.name,
+          address: attraction.address,
+          lat: attraction.lat,
+          lng: attraction.lng,
+          rating: attraction.rating,
+          reviews: attraction.reviews,
+        })
+      );
+    },
+    []
+  );
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await fetch(`/api/itinerary/${itineraryId}/save`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itinerary }),
+  const moveAttraction = useMutation(
+    (
+      { storage },
+      params: { instanceId: string; fromDay: number; toDay: number; toIndex: number }
+    ) => {
+      const lb = storage.get("itinerary");
+      const fromList = lb.get(String(params.fromDay));
+      if (!fromList) return;
+      const fromIndex = [...fromList]
+        .findIndex((o: LiveObject<AttractionEntry>) => o.get("instanceId") === params.instanceId);
+      if (fromIndex === -1) return;
+      const obj = fromList.get(fromIndex)!;
+      const data: AttractionEntry = {
+        placeId: obj.get("placeId"),
+        instanceId: obj.get("instanceId"),
+        name: obj.get("name"),
+        address: obj.get("address"),
+        lat: obj.get("lat"),
+        lng: obj.get("lng"),
+        rating: obj.get("rating"),
+        reviews: obj.get("reviews"),
+      };
+      fromList.delete(fromIndex);
+      const toList = lb.get(String(params.toDay));
+      if (!toList) return;
+      const newObj = new LiveObject(data);
+      if (params.toIndex === -1) {
+        toList.push(newObj);
+      } else {
+        toList.insert(newObj, params.toIndex);
+      }
+    },
+    []
+  );
+
+  const removeAttraction = useMutation(
+    ({ storage }, instanceId: string) => {
+      const lb = storage.get("itinerary");
+      lb.forEach((list) => {
+        const idx = [...list].findIndex((o: LiveObject<AttractionEntry>) => o.get("instanceId") === instanceId);
+        if (idx !== -1) list.delete(idx);
       });
-      setHasUnsavedChanges(false);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    },
+    []
+  );
 
-  // first fetch is for the location coordinates (from api/geocode), second fetch is for attractions based on the coordinates
-  // attraction fetched is only 5km from the coordinates (can be changed in api/attractions)
   useEffect(() => {
     const geocode = async () => {
       const res = await fetch(
@@ -91,7 +223,6 @@ function TripClient({
     geocode();
   }, [destination]);
 
-  // selecting attracction marker on the map will scroll to selected attraction on the attraction card list
   useEffect(() => {
     if (selectedAttraction) {
       cardRefs.current[selectedAttraction.placeId]?.scrollIntoView({
@@ -101,8 +232,22 @@ function TripClient({
     }
   }, [selectedAttraction]);
 
-  //Dragging logic
-  // find the attraction from attraction list or existing itinerary
+  if (!itinerary) return <div>Connecting...</div>;
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await fetch(`/api/itinerary/${itineraryId}/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itinerary }),
+      });
+      setHasUnsavedChanges(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     const source = event.active.data.current?.source;
     const attraction = event.active.data.current?.attraction;
@@ -123,146 +268,65 @@ function TripClient({
     }
   };
 
-  // dropping the attraction and checking the day number it was dropped on
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveAttraction(null);
 
-    if (!over) {
-      return;
-    }
+    if (!over) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
     const source = active.data.current?.source;
 
-    // new attraction drop on day card or reordering within each day
     if (overId.startsWith("day-")) {
       const dayNumber = parseInt(overId.replace("day-", ""));
 
-      // dragging from attraction list -> creates new instance with unique ID
       if (source === "list") {
-        // find attraction from attraction list
         const attraction = attractions.find((a) => a.placeId === activeId);
-
-        if (!attraction) {
-          return;
-        }
-
-        // creating new instance
-        const newInstance: Attraction = {
-          ...attraction,
-          instanceId: `${attraction.placeId}-${Date.now()}`,
-        };
-
-        const newItinerary = { ...itinerary };
-        newItinerary[dayNumber] = [
-          ...(newItinerary[dayNumber] ?? []),
-          newInstance,
-        ];
-        updateItinerary(newItinerary); 
-
-        // dragging from itinerary -> use existing instance
+        if (!attraction) return;
+        addAttractionToDay(dayNumber, attraction);
+        setHasUnsavedChanges(true);
       } else if (source === "itinerary") {
-        // find from existing itinerary
-        const attraction = Object.values(itinerary)
-          .flat()
-          .find((a) => a.instanceId === activeId);
-        if (!attraction) {
-          return;
-        }
-        const newItinerary = { ...itinerary };
-        Object.keys(newItinerary).forEach((day) => {
-          newItinerary[parseInt(day)] = newItinerary[parseInt(day)].filter(
-            (a) => a.instanceId !== activeId
-          );
-        });
-        newItinerary[dayNumber] = [
-          ...(newItinerary[dayNumber] ?? []),
-          attraction,
-        ];
-        updateItinerary(newItinerary); 
+        const activeDayNumber = parseInt(
+          Object.keys(itinerary).find((day) =>
+            itinerary[parseInt(day)].some((a) => a.instanceId === activeId)
+          ) ?? "0"
+        );
+        if (!activeDayNumber) return;
+        moveAttraction({ instanceId: activeId, fromDay: activeDayNumber, toDay: dayNumber, toIndex: -1 });
+        setHasUnsavedChanges(true);
       }
     } else {
-      const newItinerary = { ...itinerary };
-
-      // find the day for reordering
-      // const dayNumber = parseInt(
-      // Object.keys(newItinerary).find(day =>
-      //     newItinerary[parseInt(day)].some(a => a.placeId === overId)
-      // ) ?? '0');
-
-      // find the day where the attraction is in
       const activeDayNumber = parseInt(
-        Object.keys(newItinerary).find((day) =>
-          newItinerary[parseInt(day)].some((a) => a.instanceId === activeId)
+        Object.keys(itinerary).find((day) =>
+          itinerary[parseInt(day)].some((a) => a.instanceId === activeId)
         ) ?? "0"
       );
-
-      // find the day of the dropping area
       const overDayNumber = parseInt(
-        Object.keys(newItinerary).find((day) =>
-          newItinerary[parseInt(day)].some((a) => a.instanceId === overId)
+        Object.keys(itinerary).find((day) =>
+          itinerary[parseInt(day)].some((a) => a.instanceId === overId)
         ) ?? "0"
       );
 
-      if (!activeDayNumber || !overDayNumber) {
-        return;
-      }
+      if (!activeDayNumber || !overDayNumber) return;
 
       if (activeDayNumber === overDayNumber) {
-        // reordering within the same day
-        const dayAttractions = [...newItinerary[activeDayNumber]];
-        const oldIndex = dayAttractions.findIndex(
-          (a) => a.instanceId === activeId
-        );
-        const newIndex = dayAttractions.findIndex(
-          (a) => a.instanceId === overId
-        );
-        if (oldIndex === -1 || newIndex === -1) {
-          return;
-        }
-
-        newItinerary[activeDayNumber] = arrayMove(
-          dayAttractions,
-          oldIndex,
-          newIndex
-        );
+        const dayAttractions = itinerary[activeDayNumber];
+        const oldIndex = dayAttractions.findIndex((a) => a.instanceId === activeId);
+        const newIndex = dayAttractions.findIndex((a) => a.instanceId === overId);
+        if (oldIndex === -1 || newIndex === -1) return;
+        moveAttraction({ instanceId: activeId, fromDay: activeDayNumber, toDay: activeDayNumber, toIndex: newIndex });
       } else {
-        // moving from one day to another day
-        const attraction = newItinerary[activeDayNumber].find(
-          (a) => a.instanceId === activeId
-        );
-        if (!attraction) {
-          return;
-        }
-
-        newItinerary[activeDayNumber] = newItinerary[activeDayNumber].filter(
-          (a) => a.instanceId !== activeId
-        );
-
-        const overIndex = newItinerary[overDayNumber].findIndex(
-          (a) => a.instanceId === overId
-        );
-        newItinerary[overDayNumber] = [
-          ...newItinerary[overDayNumber].slice(0, overIndex),
-          attraction,
-          ...newItinerary[overDayNumber].slice(overIndex),
-        ];
+        const overIndex = itinerary[overDayNumber].findIndex((a) => a.instanceId === overId);
+        moveAttraction({ instanceId: activeId, fromDay: activeDayNumber, toDay: overDayNumber, toIndex: overIndex });
       }
-
-      updateItinerary(newItinerary); 
+      setHasUnsavedChanges(true);
     }
   };
 
   const handleRemove = (instanceId: string) => {
-    const newItinerary = { ...itinerary };
-    Object.keys(newItinerary).forEach((day) => {
-      newItinerary[parseInt(day)] = newItinerary[parseInt(day)].filter(
-        (a) => a.instanceId !== instanceId
-      );
-    });
-    updateItinerary(newItinerary); 
+    removeAttraction(instanceId);
+    setHasUnsavedChanges(true);
   };
 
   return (
@@ -277,44 +341,53 @@ function TripClient({
           },
         }}
       >
-        <main className="flex h-screen bg-[#F9F9F9]">
+        <main
+          className="flex h-screen bg-[#F9F9F9]"
+          onPointerMove={(e) =>
+            updateMyPresence({ cursor: { x: e.clientX, y: e.clientY } })
+          }
+          onPointerLeave={() => updateMyPresence({ cursor: null })}
+        >
+          {others.map((other) =>
+            other.presence.cursor ? (
+              <div
+                key={other.connectionId}
+                style={{
+                  position: "fixed",
+                  left: other.presence.cursor.x,
+                  top: other.presence.cursor.y,
+                  pointerEvents: "none",
+                  zIndex: 999,
+                  transform: "translate(-2px, -2px)",
+                }}
+                className="flex items-center gap-1"
+              >
+                <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                <span className="text-xs bg-blue-500 text-white px-1 rounded">
+                  {other.presence.name}
+                </span>
+              </div>
+            ) : null
+          )}
+
           <div className="p-8 w-1/3 flex flex-col shrink-0">
-            {/* text showing location and dates */}
             <h1 className="text-4xl font-bold">
               The Next Station is {destination}{" "}
             </h1>
             <p className="text-gray-500 mt-2">
-              {" "}
-              {start.toDateString()} → {end.toDateString()}{" "}
+              {start.toDateString()} → {end.toDateString()}
             </p>
-            {/* attraction search component */}
             <AttractionSearch
               lat={center.lat}
               lng={center.lng}
               onResults={setAttractions}
             />
-            {/* attraction card list */}
             <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
-              {/* {attractions.map((attraction) => (
-                                <div key={attraction.placeId} ref={el => { cardRefs.current[attraction.placeId] = el }} 
-                                    className={`border p-3 rounded-lg bg-white cursor-pointer 
-                                        transition-colors ${selectedAttraction?.placeId == attraction.placeId
-                                        ? 'border-red-500 bg-red-50'
-                                        : 'hover:bg-gray-50'
-                                    }`}
-                                    onClick={() => setSelectedAttraction(attraction)}>
-                                    <h3 className="font-semibold">{attraction.name}</h3>
-                                    <p className="text-gray-500 text-sm">{attraction.address}</p>
-                                    <p className="text-sm">Rating: {attraction.rating} ⭐ ({attraction.reviews} reviews)</p>
-                                </div>
-                            ))} */}
               {attractions.map((attraction) => (
                 <DraggableAttractionItem
                   key={attraction.placeId}
                   attraction={attraction}
-                  isSelected={
-                    selectedAttraction?.placeId === attraction.placeId
-                  }
+                  isSelected={selectedAttraction?.placeId === attraction.placeId}
                   onClick={() => setSelectedAttraction(attraction)}
                   cardRef={(el) => {
                     cardRefs.current[attraction.placeId] = el;
@@ -323,8 +396,7 @@ function TripClient({
               ))}
             </div>
           </div>
-          {/* rendering map on the right spanning 2/3 of the screen */}
-          {/* <div className="w-2/3 h-full"> */}
+
           <div className="flex-1 h-full relative">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -340,7 +412,13 @@ function TripClient({
               onSelectAttraction={setSelectedAttraction}
             />
           </div>
-          {/* itinerary sidebar */}
+
+          <CollaboratorPanel
+            itineraryId={itineraryId}
+            currentUserId={currentUserId}
+            currentUserRole={currentUserRole}
+            initialCollaborators={collaborators}
+          />
           <ItinerarySidebar
             startDate={startDate}
             endDate={endDate}
@@ -352,15 +430,12 @@ function TripClient({
             hasUnsavedChanges={hasUnsavedChanges}
           />
         </main>
-        {/* ghost card while dragging */}
+
         <DragOverlay>
           {activeAttraction && (
             <div className="border p-3 rounded-lg bg-white shadow-lg opacity-90">
-              <h3 className="font-semibold"> {activeAttraction.name} </h3>
-              <p className="text-sm text-gray-500">
-                {" "}
-                {activeAttraction.rating} ⭐{" "}
-              </p>
+              <h3 className="font-semibold">{activeAttraction.name}</h3>
+              <p className="text-sm text-gray-500">{activeAttraction.rating} ⭐</p>
             </div>
           )}
         </DragOverlay>

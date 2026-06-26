@@ -1,7 +1,8 @@
 import TripClient from "@/components/trip/TripClient";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Attraction } from "@/types/attractions";
+import { getCurrUserId } from "@/lib/auth/tokens"
 
 async function Trip({
   params,
@@ -16,6 +17,9 @@ async function Trip({
 }) {
   const { tripId } = await params;
   const { destination, startDate, endDate } = await searchParams;
+
+  const currUserId = await getCurrUserId()
+  if (!currUserId) redirect('/login')
   
   const itinerary = await prisma.itinerary.findUnique({
     where: { id: tripId },
@@ -25,6 +29,27 @@ async function Trip({
   });
 
   if (!itinerary) return notFound();
+
+  const collabRecords = await prisma.collaborator.findMany({
+    where: { itineraryId: tripId }
+  })
+
+  const currUserCollab = collabRecords.find((c) => c.userId === currUserId)
+  if (!currUserCollab) return notFound()
+
+  const users = await prisma.user.findMany({
+    where: { id: { in: collabRecords.map((c) => c.userId) } },
+    select: { id: true, name: true, imageUrl: true }
+  })
+
+  const collaborators = collabRecords.map((c) => ({
+    id: c.id,
+    role: c.role,
+    userId: c.userId,
+    user: users.find((u) => u.id === c.userId)!
+  }))
+
+  
 
   const savedItinerary: { [day: number]: Attraction[] } = {};
   for (const item of itinerary.itineraryItems) {
@@ -48,6 +73,9 @@ async function Trip({
       startDate={startDate}
       endDate={endDate}
       savedItinerary={savedItinerary}
+      currentUserId={currUserId}
+      currentUserRole={currUserCollab.role}
+      collaborators={collaborators}
     />
   );
 }

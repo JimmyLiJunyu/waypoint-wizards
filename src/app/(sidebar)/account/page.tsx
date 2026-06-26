@@ -3,6 +3,7 @@
 import { updateProfile } from "./action";
 import { useUser } from "@/context/UserContext";
 import { useState } from "react";
+import { supabase } from '@/lib/supabase'
 import Image from "next/image";
 import {
   User,
@@ -23,6 +24,23 @@ function AccountPage() {
 
   if (isUserLoading) return <p>Loading profile...</p>;
   if (!user) return <p>Server error.</p>;
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    const { error } = await supabase.storage
+      .from('profile-picture')
+      .upload(`${user.id}/avatar`, file, { upsert: true })
+    
+    if (error) { setError("Image upload failed"); return;}
+
+    const { data: { publicUrl }} = supabase.storage
+      .from('profile-picture')
+      .getPublicUrl(`${user.id}/avatar`);
+
+    setImage(publicUrl)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,16 +144,14 @@ function AccountPage() {
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider ml-1 flex items-center gap-2">
-              <ImageIcon className="size-3" /> Image Upload
+              <ImageIcon className="size=3"/> Profile Picture
             </label>
             <input
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              type="text"
-              name="imageUrl"
-              placeholder={user.imageUrl || "https://..."}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all outline-none bg-slate-50/50 focus:bg-white text-slate-800"
-            />
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:bg-slate-900 file:text-white hover:file:bg-slate-700 cursor-pointer"/>
+              {image && <p className="text-xstext-green-600 mt-1">Image ready to save</p>}
           </div>
 
           <button

@@ -182,7 +182,7 @@ function MapInner({
 
         return (
           <AdvancedMarker
-            key={attraction.placeId}
+            key={attraction.instanceId ?? attraction.placeId}
             position={{ lat: attraction.lat, lng: attraction.lng }}
             onClick={() => onSelectAttraction(attraction)}
           >

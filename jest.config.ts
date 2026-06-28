@@ -10,6 +10,12 @@ const config: Config = {
     "**/__tests__/unit/**/*.test.ts",
     "**/__tests__/integration/**/*.test.ts",
   ],
+  transformIgnorePatterns: [
+    "node_modules/(?!(jose)/)",
+  ],
+  transform: {
+    "^.+\\.(ts|tsx|js|jsx)$": ["ts-jest", { tsconfig: { allowJs: true } }],
+  },
 };
 
 export default config;

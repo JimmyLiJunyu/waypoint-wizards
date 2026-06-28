@@ -1,36 +1,43 @@
 import { test, expect } from "@playwright/test";
 
-// Each test gets a unique timestamp so sign-ups don't collide with each other.
 const unique = Date.now();
 const testName = `testuser${unique}`;
 const testEmail = `test${unique}@example.com`;
 const testPassword = "TestPassword123";
 
+// Helper: fills the sign-up form and waits for redirect to /login.
+async function signUp(page: import("@playwright/test").Page) {
+  await page.goto("/sign-up");
+  await page.fill('input[placeholder="Email"]', testEmail);
+  await page.fill('input[placeholder="Name"]', testName);
+  await page.fill('input[placeholder="Password"]', testPassword);
+  await page.waitForTimeout(150);
+  await page.fill('input[placeholder="Verify Password"]', testPassword);
+  await page.waitForTimeout(150);
+  await page.click('button[type="submit"]');
+  await page.waitForURL(/\/login/, { timeout: 10000 });
+}
+
 test.describe("Authentication", () => {
-  test("user can sign up and land on the dashboard", async ({ page }) => {
-    await page.goto("/sign-up");
-    await page.fill('input[name="name"]', testName);
-    await page.fill('input[name="email"]', testEmail);
-    await page.fill('input[name="password"]', testPassword);
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/);
+  test("user can sign up and be redirected to login", async ({ page }) => {
+    await signUp(page);
+    await expect(page).toHaveURL(/\/login/);
   });
 
-  test("user can log in with correct credentials", async ({ page }) => {
-    await page.goto("/login");
-    await page.fill('input[name="email"]', testEmail);
-    await page.fill('input[name="password"]', testPassword);
+  test("user can log in with correct credentials and land on dashboard", async ({ page }) => {
+    await signUp(page);
+    await page.fill('input[placeholder="Email"]', testEmail);
+    await page.fill('input[placeholder="Password"]', testPassword);
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/dashboard/);
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
   });
 
   test("login shows an error for wrong password", async ({ page }) => {
     await page.goto("/login");
-    await page.fill('input[name="email"]', testEmail);
-    await page.fill('input[name="password"]', "wrongpassword");
+    await page.fill('input[placeholder="Email"]', testEmail);
+    await page.fill('input[placeholder="Password"]', "wrongpassword");
     await page.click('button[type="submit"]');
-    // Stay on login page, error message visible
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.getByText(/invalid/i)).toBeVisible();
+    await expect(page.locator(".bg-red-50")).toBeVisible();
   });
 });

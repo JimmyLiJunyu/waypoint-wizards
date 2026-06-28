@@ -1,4 +1,3 @@
-// Mock Prisma so no real database is hit — we control what each query returns.
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
@@ -8,13 +7,11 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
-// Mock bcrypt so we don't do real hashing in unit tests.
 jest.mock("bcrypt", () => ({
   hash: jest.fn().mockResolvedValue("hashed_password"),
   compare: jest.fn(),
 }));
 
-// Mock signJWT so we don't need a real JWT secret here.
 jest.mock("@/lib/auth/tokens", () => ({
   signJWT: jest.fn().mockResolvedValue("mock_token"),
 }));
@@ -23,7 +20,7 @@ import { createUser, verifyUser } from "@/services/userServices";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
-// Cast to jest mocks so TypeScript knows we can call .mockResolvedValue on them.
+
 const mockFindUnique = prisma.user.findUnique as jest.Mock;
 const mockCreate = prisma.user.create as jest.Mock;
 const mockBcryptCompare = bcrypt.compare as jest.Mock;

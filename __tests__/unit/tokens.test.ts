@@ -1,7 +1,5 @@
 import { signJWT, verifyJWT } from "@/lib/auth/tokens";
 
-// next/headers is a server-only Next.js module that doesn't exist in Jest's Node environment.
-// We mock it so the import in tokens.ts doesn't crash — getCurrUserId is not tested here.
 jest.mock("next/headers", () => ({
   cookies: jest.fn(),
 }));

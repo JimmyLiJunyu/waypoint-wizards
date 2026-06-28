@@ -5,7 +5,6 @@ const testName = `testuser${unique}`;
 const testEmail = `test${unique}@example.com`;
 const testPassword = "TestPassword123";
 
-// Helper: fills the sign-up form and waits for redirect to /login.
 async function signUp(page: import("@playwright/test").Page) {
   await page.goto("/sign-up");
   await page.fill('input[placeholder="Email"]', testEmail);
@@ -24,8 +23,9 @@ test.describe("Authentication", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
+  // User was created in the test above — just log in directly here.
   test("user can log in with correct credentials and land on dashboard", async ({ page }) => {
-    await signUp(page);
+    await page.goto("/login");
     await page.fill('input[placeholder="Email"]', testEmail);
     await page.fill('input[placeholder="Password"]', testPassword);
     await page.click('button[type="submit"]');

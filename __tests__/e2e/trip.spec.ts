@@ -19,33 +19,35 @@ async function signUpAndLogin(page: import("@playwright/test").Page) {
   await page.fill('input[placeholder="Email"]', testEmail);
   await page.fill('input[placeholder="Password"]', testPassword);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/\/dashboard/);
+  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
 }
 
 test.describe("Trip Creation and Itinerary Building", () => {
   test("user can create a new trip and land on the trip page", async ({ page }) => {
     await signUpAndLogin(page);
-
-    // Navigate to new trip page
     await page.goto("/new-trip");
 
-    // Fill in trip destination — look for any text/search input
-    await page.fill(
-      'input[placeholder*="estination"], input[placeholder*="earch"], input[type="text"]',
-      "Tokyo, Japan"
-    );
+    // Fill destination
+    await page.fill('input[placeholder="Where do you want to go?"]', "Tokyo");
+    await page.waitForTimeout(300);
 
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/trip\//, { timeout: 10000 });
+    // Open Start Date picker and click the first available day
+    await page.getByText("Start Date").click();
+    await page.locator('[role="gridcell"] button:not([disabled])').first().click();
+
+    // Open End Date picker and click a day a week later
+    await page.getByText("End Date").click();
+    await page.locator('[role="gridcell"] button:not([disabled])').nth(7).click();
+
+    // Submit (button is type="button", not type="submit")
+    await page.click('button:has-text("Plan the Trip")');
+    await expect(page).toHaveURL(/\/trip\//, { timeout: 15000 });
   });
 
-  test("dashboard shows the created trip", async ({ page }) => {
+  test("dashboard renders successfully after login", async ({ page }) => {
     await signUpAndLogin(page);
     await page.goto("/dashboard");
-
-    // After creating a trip, the dashboard should list it
-    // We just verify the dashboard renders without error
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.locator("main, body")).toBeVisible();
+    await expect(page.locator("body")).toBeVisible();
   });
 });

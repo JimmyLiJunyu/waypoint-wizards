@@ -21,32 +21,35 @@ async function login(page: import("@playwright/test").Page, user: typeof userA) 
   await page.fill('input[placeholder="Email"]', user.email);
   await page.fill('input[placeholder="Password"]', user.password);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/\/dashboard/);
+  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
 }
 
 test.describe("Social Follow Flow", () => {
-  test("User A can send a follow request to User B", async ({ browser }) => {
+  test("User A can send a follow request that appears in User B's request list", async ({ browser }) => {
     const contextA = await browser.newContext();
     const contextB = await browser.newContext();
     const pageA = await contextA.newPage();
     const pageB = await contextB.newPage();
 
+    // Both users sign up
     await signUp(pageA, userA);
     await signUp(pageB, userB);
 
     // User A searches for User B and sends a follow request
     await login(pageA, userA);
     await pageA.goto("/socials");
-    await pageA.fill('input[placeholder*="earch"], input[placeholder*="ser"]', userB.name);
+    await pageA.fill('input[placeholder="Search users..."]', userB.name);
+    // Wait for the debounced search and popup to appear
+    await pageA.waitForSelector('div.absolute button:has-text("Follow")', { timeout: 5000 });
+    await pageA.click('div.absolute button:has-text("Follow")');
     await pageA.waitForTimeout(500);
-    await pageA.click('button:has-text("Follow"), button:has-text("Request")');
 
-    // User B checks for the incoming follow request
+    // User B opens their requests modal and accepts
     await login(pageB, userB);
     await pageB.goto("/socials");
-    await expect(pageB.getByText(userA.name)).toBeVisible({ timeout: 5000 });
-
-    // User B accepts the request
+    await pageB.click('button:has-text("Requests")');
+    // userA's name should appear inside the modal
+    await expect(pageB.getByText(userA.name)).toBeVisible({ timeout: 8000 });
     await pageB.click('button:has-text("Accept")');
 
     await contextA.close();

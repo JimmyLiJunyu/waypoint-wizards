@@ -23,7 +23,7 @@ import { DayLegs, ModeLeg } from "@/types/directions";
 import { ColouredPolylineSegment } from "../map/Map";
 import CollaboratorPanel from "./CollaboratorPanel";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
-import { RoomProvider, useStorage, useMutation, useMyPresence, useOthers } from "@/lib/liveblocks";
+import { RoomProvider, useStorage, useMutation, useOthers, useRoom } from "@/lib/liveblocks";
 import { AttractionEntry } from "@/lib/liveblocks";
 
 // sort attractions by a combined score of rating and reviews
@@ -162,8 +162,10 @@ function TripInner({
   }>({ walking: null, driving: null, transit: null });
   const [mapRouteMode, setMapRouteMode] = useState<"walking" | "driving" | "transit">("driving");
 
-  // Liveblocks presence (from bbfb425)
-  const [, updateMyPresence] = useMyPresence();
+  // useRoom gives us a stable updatePresence that doesn't re-render this component.
+  // useMyPresence would re-render on every cursor move, causing the directions
+  // effect to re-fire on each mouse pixel.
+  const room = useRoom();
   const others = useOthers();
 
   const markersToShow =
@@ -273,10 +275,13 @@ function TripInner({
   }, [destination]);
 
   useEffect(() => {
-    const fetchDirections = async () => {
-      const daysToFetch = Object.keys(itinerary)
-        .map(Number)
-        .filter((day) => (itinerary[day] ?? []).length >= 2);
+    // Debounce: only fetch after 500ms of no itinerary changes.
+    // Without this, every re-render (e.g. from cursor moves or LiveBlocks
+    // storage ticks) would fire a directions request for every day.
+    const id = setTimeout(async () => {
+    const daysToFetch = Object.keys(itinerary)
+      .map(Number)
+      .filter((day) => (itinerary[day] ?? []).length >= 2);
 
       if (daysToFetch.length === 0) {
         setDayLegs({});
@@ -354,9 +359,9 @@ function TripInner({
 
       setDayLegs(newLegs);
       setDayPolylines(selectedPolylines);
-    };
+    }, 500);
 
-    fetchDirections();
+    return () => clearTimeout(id);
   }, [itinerary, selectedDay]);
 
   useEffect(() => {
@@ -481,9 +486,9 @@ function TripInner({
         <main
           className="flex h-screen bg-[#F9F9F9]"
           onPointerMove={(e) =>
-            updateMyPresence({ cursor: { x: e.clientX, y: e.clientY } })
+            room.updatePresence({ cursor: { x: e.clientX, y: e.clientY } })
           }
-          onPointerLeave={() => updateMyPresence({ cursor: null })}
+          onPointerLeave={() => room.updatePresence({ cursor: null })}
         >
           {/* Live cursors for other collaborators */}
           {others.map((other) =>

@@ -26,4 +26,4 @@ const client = createClient({
     authEndpoint: "/api/liveblocks-auth"
 })
 
-export const { RoomProvider, useStorage, useMutation, useMyPresence, useOthers, useSelf } = createRoomContext<Presence, Storage>(client)
+export const { RoomProvider, useStorage, useMutation, useMyPresence, useOthers, useSelf, useRoom } = createRoomContext<Presence, Storage>(client)

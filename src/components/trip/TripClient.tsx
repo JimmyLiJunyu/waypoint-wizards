@@ -274,10 +274,19 @@ function TripInner({
     geocode();
   }, [destination]);
 
+  // Primitive string — React compares with ===, so the effect only re-runs
+  // when attractions are actually added, removed, or reordered, not every time
+  // useStorage returns a new object reference.
+  const itineraryKey = JSON.stringify(
+    Object.fromEntries(
+      Object.entries(itinerary).map(([day, attractions]) => [
+        day,
+        attractions.map((a) => a.instanceId),
+      ])
+    )
+  );
+
   useEffect(() => {
-    // Debounce: only fetch after 500ms of no itinerary changes.
-    // Without this, every re-render (e.g. from cursor moves or LiveBlocks
-    // storage ticks) would fire a directions request for every day.
     const id = setTimeout(async () => {
     const daysToFetch = Object.keys(itinerary)
       .map(Number)
@@ -362,7 +371,8 @@ function TripInner({
     }, 500);
 
     return () => clearTimeout(id);
-  }, [itinerary, selectedDay]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itineraryKey, selectedDay]);
 
   useEffect(() => {
     if (selectedAttraction) {

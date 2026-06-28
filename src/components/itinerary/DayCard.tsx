@@ -27,7 +27,7 @@ function DayCard({ day, date, attractions, onRemove } : {
                         ) : (
                             <>
                                 {attractions.map((attraction) => (
-                                    <SortableAttractionItem key={attraction.placeId} attraction={attraction} onRemove={onRemove} />
+                                    <SortableAttractionItem key={attraction.instanceId ?? attraction.placeId} attraction={attraction} onRemove={onRemove} />
                                 ))}
                                 <div className='min-h-8' />
                             </>

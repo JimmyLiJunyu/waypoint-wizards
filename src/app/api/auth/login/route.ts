@@ -1,7 +1,4 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcrypt";
-import { signJWT } from "@/lib/auth/tokens";
 import { verifyUser } from "@/services/userServices";
 
 export async function POST(request: Request) {
@@ -16,8 +13,8 @@ export async function POST(request: Request) {
 
     response.cookies.set("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_EV === "production",
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24,
       path: "/",
     });

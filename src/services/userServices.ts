@@ -30,7 +30,7 @@ export async function createUser(data: Prisma.UserCreateInput) {
     });
 }
 
-export async function verifyUser(data: Prisma.UserCreateInput) {
+export async function verifyUser(data: { email: string; password: string }) {
     const normalizedEmail = data.email.toLowerCase();
 
     const user = await prisma.user.findUnique({

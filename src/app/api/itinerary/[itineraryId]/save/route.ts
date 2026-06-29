@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { itineraryId: string } }
+  { params }: { params: Promise<{ itineraryId: string }>  }
 ) {
   const { itineraryId } = await params;
   const body = await req.json();

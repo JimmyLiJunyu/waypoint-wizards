@@ -494,12 +494,21 @@ function TripInner({
         }}
       >
         <main
-          className="flex h-screen bg-[#F9F9F9]"
+          className="flex flex-col h-screen bg-[#F9F9F9]"
           onPointerMove={(e) =>
             room.updatePresence({ cursor: { x: e.clientX, y: e.clientY } })
           }
           onPointerLeave={() => room.updatePresence({ cursor: null })}
         >
+          <CollaboratorPanel
+            itineraryId={itineraryId}
+            currentUserId={currentUserId}
+            currentUserRole={currentUserRole}
+            initialCollaborators={collaborators}
+          />
+
+          <div className="flex flex-1 overflow-hidden">
+
           {/* Live cursors for other collaborators */}
           {others.map((other) =>
             other.presence.cursor ? (
@@ -627,13 +636,6 @@ function TripInner({
             />
           </div>
 
-          <CollaboratorPanel
-            itineraryId={itineraryId}
-            currentUserId={currentUserId}
-            currentUserRole={currentUserRole}
-            initialCollaborators={collaborators}
-          />
-
           <ItinerarySidebar
             startDate={startDate}
             endDate={endDate}
@@ -644,6 +646,7 @@ function TripInner({
             isSaving={isSaving}
             hasUnsavedChanges={hasUnsavedChanges}
           />
+          </div>
         </main>
 
         <DragOverlay>

@@ -1,16 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { verifyJWT } from "@/lib/auth/tokens";
-import { cookies } from "next/headers";
+import { getCurrUserId } from "@/lib/auth/session";
 
 export async function PATCH(
     req: NextRequest,
     { params }: { params: Promise<{ itineraryId: string }> }
 ) {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-    const session = token ? await verifyJWT(token) : null;
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = await getCurrUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
         const { itineraryId } = await params;

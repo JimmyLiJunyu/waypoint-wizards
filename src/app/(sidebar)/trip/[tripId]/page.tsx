@@ -2,7 +2,7 @@ import TripClient from "@/components/trip/TripClient";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { Attraction } from "@/types/attractions";
-import { getCurrUserId } from "@/lib/auth/tokens"
+import { getCurrUserId } from "@/lib/auth/session"
 
 async function Trip({
   params,

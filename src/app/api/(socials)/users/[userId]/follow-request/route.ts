@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getCurrUserId } from "@/lib/auth/tokens"
+import { getCurrUserId } from "@/lib/auth/session"
 import { respondToFollowRequest } from "@/services/socialsServices"
 
 export async function PATCH(request: Request, context: { params: Promise<{ userId: string }> }) {

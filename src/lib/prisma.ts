@@ -4,7 +4,8 @@ import pg from "pg";
 
 // native Node-Postgres connection pool pointing towards Neon URL
 const pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
 });
 
 // wrap the pool in the Prisma 7 driver adapter

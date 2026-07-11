@@ -1,17 +1,13 @@
 import { createItinerary } from "@/services/tripServices";
 import { NextResponse } from "next/server";
-import { verifyJWT } from "@/lib/auth/tokens";
-import { cookies } from "next/headers";
+import { getCurrUserId } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-    const session = token ? await verifyJWT(token) : null;
-    if (!session) return NextResponse.json({ error: "Unauthorized " }, { status: 401 });
+    const userId = await getCurrUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     try {
         const { destination, startDate, endDate } = await request.json();
-        const userId = session.userId.toString();
 
         const existingCount = await prisma.itinerary.count({
             where: {

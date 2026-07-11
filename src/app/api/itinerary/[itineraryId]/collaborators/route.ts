@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getCurrUserId } from "@/lib/auth/tokens"
+import { getCurrUserId } from "@/lib/auth/session"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ itineraryId: string}>}

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCurrUserId } from '@/lib/auth/tokens'
+import { getCurrUserId } from '@/lib/auth/session'
 import { getFollowStatus } from '@/services/socialsServices'
 
 export async function GET(request: Request, context: { params: Promise<{ userId: string }> }) {

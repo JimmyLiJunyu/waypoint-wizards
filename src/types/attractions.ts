@@ -7,4 +7,5 @@ export interface Attraction {
     reviews: number;
     placeId: string;
     instanceId?: string;
+    photoRef?: string;
 }

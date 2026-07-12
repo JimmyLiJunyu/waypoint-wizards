@@ -132,7 +132,9 @@ function TripInner({
   const start = new Date(startDate);
   const end = new Date(endDate);
   const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
+  const [panTarget, setPanTarget] = useState<Attraction | null>(null);
   const cardRefs = useRef<{ [placeId: string]: HTMLDivElement | null }>({});
+  const listContainerRef = useRef<HTMLDivElement>(null);
 
   const itinerary = useStorage((root) => {
     const result: { [day: number]: Attraction[] } = {};
@@ -380,11 +382,18 @@ function TripInner({
   }, [itineraryKey, selectedDay]);
 
   useEffect(() => {
-    if (selectedAttraction) {
-      cardRefs.current[selectedAttraction.placeId]?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
+    if (!selectedAttraction) return;
+    const card = cardRefs.current[selectedAttraction.placeId];
+    const container = listContainerRef.current;
+    if (!card || !container) return;
+    const cardRect = card.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const cardTopInContainer = cardRect.top - containerRect.top + container.scrollTop;
+    const cardBottomInContainer = cardTopInContainer + card.offsetHeight;
+    const visibleTop = container.scrollTop;
+    const visibleBottom = visibleTop + container.clientHeight;
+    if (cardTopInContainer < visibleTop || cardBottomInContainer > visibleBottom) {
+      container.scrollTo({ top: cardTopInContainer - 8, behavior: "smooth" });
     }
   }, [selectedAttraction]);
 
@@ -567,7 +576,7 @@ function TripInner({
                   lng={center.lng}
                   onResults={(results) => setAttractions(sortAttractions(results))}
                 />
-                <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
+                <div ref={listContainerRef} className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
                   {attractions.map((attraction) => (
                     <DraggableAttractionItem
                       key={attraction.placeId}
@@ -575,7 +584,7 @@ function TripInner({
                       isSelected={
                         selectedAttraction?.placeId === attraction.placeId
                       }
-                      onClick={() => setSelectedAttraction(attraction)}
+                      onClick={() => { setPanTarget(attraction); setSelectedAttraction(attraction); }}
                       cardRef={(el) => {
                         cardRefs.current[attraction.placeId] = el;
                       }}
@@ -640,6 +649,7 @@ function TripInner({
               center={center}
               selectedAttraction={selectedAttraction}
               onSelectAttraction={setSelectedAttraction}
+              panTarget={panTarget}
               routePolyline={dayPolylines[mapRouteMode]}
               routeColour={getDayColour(selectedDay)}
               markerNumbers={markerNumbers}

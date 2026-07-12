@@ -22,6 +22,7 @@ import { getDayColour } from "@/lib/dayColours";
 import { DayLegs, ModeLeg } from "@/types/directions";
 import { ColouredPolylineSegment } from "../map/Map";
 import CollaboratorPanel from "./CollaboratorPanel";
+import BudgetPanel from "./BudgetPanel";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import { RoomProvider, useStorage, useMutation, useOthers, useRoom } from "@/lib/liveblocks";
 import { AttractionEntry } from "@/lib/liveblocks";
@@ -88,6 +89,7 @@ function TripClient({
                     lng: a.lng,
                     rating: a.rating ?? 0,
                     reviews: a.reviews,
+                    photoRef: a.photoRef,
                   })
               )
             ),
@@ -152,7 +154,7 @@ function TripInner({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Trip details / routing state (from HEAD)
-  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details">("attractions");
+  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details" | "budget">("attractions");
   const [selectedDay, setSelectedDay] = useState(1);
   const [dayLegs, setDayLegs] = useState<{ [day: number]: DayLegs }>({});
   const [dayPolylines, setDayPolylines] = useState<{
@@ -170,6 +172,7 @@ function TripInner({
 
   const markersToShow =
     leftPanelView === "details" ? itinerary[selectedDay] ?? [] : attractions;
+
 
   const markerNumbers: { [key: string]: number } =
     leftPanelView === "details"
@@ -205,6 +208,7 @@ function TripInner({
           lng: attraction.lng,
           rating: attraction.rating ?? 0,
           reviews: attraction.reviews,
+          photoRef: attraction.photoRef,
         })
       );
     },
@@ -232,6 +236,7 @@ function TripInner({
         lng: obj.get("lng"),
         rating: obj.get("rating"),
         reviews: obj.get("reviews"),
+        photoRef: obj.get("photoRef"),
       };
       fromList.delete(fromIndex);
       const toList = lb.get(String(params.toDay));
@@ -533,20 +538,21 @@ function TripInner({
           )}
 
           <div className="p-8 w-1/3 flex flex-col shrink-0">
-            {/* Toggle between attraction list and trip details */}
-            <div className="flex justify-end mb-2">
-              <button
-                onClick={() =>
-                  setLeftPanelView(
-                    leftPanelView === "attractions" ? "details" : "attractions"
-                  )
-                }
-                className="px-4 py-2 rounded-full text-sm font-semibold shadow bg-white border hover:bg-gray-50 transition-colors"
-              >
-                {leftPanelView === "attractions"
-                  ? "Trip Details →"
-                  : "← Attractions"}
-              </button>
+            {/* Tab navigation */}
+            <div className="flex mb-2 bg-white border rounded-full p-1 shadow-sm">
+              {(["attractions", "details", "budget"] as const).map((view) => (
+                <button
+                  key={view}
+                  onClick={() => setLeftPanelView(view)}
+                  className={`flex-1 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${
+                    leftPanelView === view
+                      ? "bg-red-500 text-white"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {view === "attractions" ? "Explore" : view === "details" ? "Details" : "Budget"}
+                </button>
+              ))}
             </div>
 
             <h1 className="text-4xl font-bold">
@@ -579,13 +585,19 @@ function TripInner({
                   ))}
                 </div>
               </>
-            ) : (
+            ) : leftPanelView === "details" ? (
               <TripDetailsPanel
                 itinerary={itinerary}
                 days={days}
                 selectedDay={selectedDay}
                 onSelectDay={setSelectedDay}
                 dayLegs={dayLegs}
+              />
+            ) : (
+              <BudgetPanel
+                itineraryId={itineraryId}
+                collaborators={collaborators}
+                currentUserId={currentUserId}
               />
             )}
           </div>

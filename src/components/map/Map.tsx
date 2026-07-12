@@ -218,8 +218,15 @@ function MapInner({
           }}
           onCloseClick={() => onSelectAttraction(null)}
         >
-          <div>
-            <h2> {selectedAttraction.name} </h2>
+          <div className="w-48">
+            {selectedAttraction.photoRef && (
+              <img
+                src={`/api/place-photo?ref=${selectedAttraction.photoRef}`}
+                alt={selectedAttraction.name}
+                className="w-full h-28 object-cover rounded mb-2"
+              />
+            )}
+            <h2 className="font-semibold"> {selectedAttraction.name} </h2>
             <p className="text-gray-500 text-sm">
               {selectedAttraction.address}
             </p>

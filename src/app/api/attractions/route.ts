@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
     rating: place.rating,
     address: place.formatted_address,
     reviews: place.user_ratings_total ?? 0,
-    placeId: place.place_id
+    placeId: place.place_id,
+    photoRef: place.photos?.[0]?.photo_reference ?? null,
   }))
 
   return NextResponse.json({ attractions })

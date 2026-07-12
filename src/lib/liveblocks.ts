@@ -10,6 +10,7 @@ export type AttractionEntry = {
     lng: number;
     rating: number;
     reviews: number;
+    photoRef?: string;
 }
 
 export type Presence = {

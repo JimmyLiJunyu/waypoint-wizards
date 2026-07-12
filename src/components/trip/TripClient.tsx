@@ -499,7 +499,7 @@ function TripInner({
         }}
       >
         <main
-          className="flex flex-col h-screen bg-[#F9F9F9]"
+          className="flex h-screen bg-[#F9F9F9]"
           onPointerMove={(e) =>
             room.updatePresence({ cursor: { x: e.clientX, y: e.clientY } })
           }
@@ -511,8 +511,6 @@ function TripInner({
             currentUserRole={currentUserRole}
             initialCollaborators={collaborators}
           />
-
-          <div className="flex flex-1 overflow-hidden">
 
           {/* Live cursors for other collaborators */}
           {others.map((other) =>
@@ -658,7 +656,6 @@ function TripInner({
             isSaving={isSaving}
             hasUnsavedChanges={hasUnsavedChanges}
           />
-          </div>
         </main>
 
         <DragOverlay>

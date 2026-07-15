@@ -63,6 +63,7 @@ async function Trip({
       lng: item.lng,
       rating: item.rating,
       reviews: item.reviews,
+      photoRef: item.photoRef ?? undefined,
     });
   }
 

@@ -7,6 +7,7 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import { useState, useEffect } from "react";
+import { MapPin } from "lucide-react";
 import { Attraction } from "@/types/attractions";
 
 export interface ColouredPolylineSegment {
@@ -20,6 +21,7 @@ function MapInner({
   attractions,
   selectedAttraction,
   onSelectAttraction,
+  panTarget,
   routePolyline,
   routeColour,
   markerNumbers,
@@ -28,6 +30,7 @@ function MapInner({
   attractions: Attraction[];
   selectedAttraction: Attraction | null;
   onSelectAttraction: (attraction: Attraction | null) => void;
+  panTarget?: Attraction | null;
   routePolyline?: string | string[] | ColouredPolylineSegment[] | null;
   routeColour?: string;
   markerNumbers?: { [key: string]: number };
@@ -39,12 +42,12 @@ function MapInner({
     []
   );
 
-  // selecting attraction on the card list will pan to coordinates of attraction on the map
+  // only pan when a card in the list is clicked (panTarget), not when a map pin is clicked
   useEffect(() => {
-    if (map && selectedAttraction) {
-      map.panTo({ lat: selectedAttraction.lat, lng: selectedAttraction.lng });
+    if (map && panTarget) {
+      map.panTo({ lat: panTarget.lat, lng: panTarget.lng });
     }
-  }, [map, selectedAttraction]);
+  }, [map, panTarget]);
 
   // map pans to coordinates of destination when loading
   useEffect(() => {
@@ -205,7 +208,12 @@ function MapInner({
               >
                 {number}
               </div>
-            ) : undefined}
+            ) : (
+              <div className="relative">
+                <MapPin size={36} className="text-red-600 fill-red-500 drop-shadow-md" strokeWidth={2} />
+                <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white rounded-full" />
+              </div>
+            )}
           </AdvancedMarker>
         );
       })}
@@ -218,8 +226,15 @@ function MapInner({
           }}
           onCloseClick={() => onSelectAttraction(null)}
         >
-          <div>
-            <h2> {selectedAttraction.name} </h2>
+          <div className="w-48">
+            {selectedAttraction.photoRef && (
+              <img
+                src={`/api/place-photo?ref=${selectedAttraction.photoRef}`}
+                alt={selectedAttraction.name}
+                className="w-full h-28 object-cover rounded mb-2"
+              />
+            )}
+            <h2 className="font-semibold"> {selectedAttraction.name} </h2>
             <p className="text-gray-500 text-sm">
               {selectedAttraction.address}
             </p>
@@ -240,6 +255,7 @@ export default function MapComponent({
   center,
   selectedAttraction,
   onSelectAttraction,
+  panTarget,
   routePolyline,
   routeColour,
   markerNumbers,
@@ -249,6 +265,7 @@ export default function MapComponent({
   center: { lat: number; lng: number };
   selectedAttraction: Attraction | null;
   onSelectAttraction: (attraction: Attraction | null) => void;
+  panTarget?: Attraction | null;
   routePolyline?: string | string[] | ColouredPolylineSegment[] | null;
   routeColour?: string;
   markerNumbers?: { [key: string]: number };
@@ -260,6 +277,7 @@ export default function MapComponent({
       attractions={attractions}
       selectedAttraction={selectedAttraction}
       onSelectAttraction={onSelectAttraction}
+      panTarget={panTarget}
       routePolyline={routePolyline}
       routeColour={routeColour}
       markerNumbers={markerNumbers}

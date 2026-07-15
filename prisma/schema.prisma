@@ -73,6 +73,11 @@ model User {
   tripPhoto  TripPhoto[]
   followers  Follow[]       @relation("UserFollowers")
   following  Follow[]       @relation("UserFollowing")
+  itinearies     Collaborator[]
+  followers      Follow[]       @relation("UserFollowers")
+  following      Follow[]       @relation("UserFollowing")
+  expenses       Expense[]
+  expenseSplits  ExpenseSplit[]
 }
 
 model Destination {
@@ -97,6 +102,7 @@ model Itinerary {
   itineraryItems ItineraryItem[]
   posts Post[]
   tripPhotos TripPhoto[]
+  expenses       Expense[]
 }
 
 model Collaborator {
@@ -122,8 +128,32 @@ model ItineraryItem {
   rating      Float
   reviews     Int
   instanceId  String
+  photoRef    String?
   itineraryId String
   itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id          Int            @id @default(autoincrement())
+  itineraryId String
+  payerId     String
+  description String
+  amount      Float
+  currency    String         @default("SGD")
+  createdAt   DateTime       @default(now())
+  itinerary   Itinerary      @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  payer       User           @relation(fields: [payerId], references: [id])
+  splits      ExpenseSplit[]
+}
+
+model ExpenseSplit {
+  id        Int     @id @default(autoincrement())
+  expenseId Int
+  userId    String
+  share     Float
+  settled   Boolean @default(false)
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id])
 }
 
 enum FollowStatus {

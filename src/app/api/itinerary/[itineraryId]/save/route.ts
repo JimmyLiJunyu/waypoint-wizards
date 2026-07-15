@@ -18,6 +18,7 @@ export async function POST(
       lng: number;
       rating: number;
       reviews: number;
+      photoRef?: string;
     }[];
   } = body.itinerary;
   console.log('itineraryId:', itineraryId);
@@ -36,6 +37,7 @@ export async function POST(
       lng: a.lng,
       rating: a.rating ?? 0,
       reviews: a.reviews,
+      photoRef: a.photoRef ?? null,
       itineraryId,
     }))
   );

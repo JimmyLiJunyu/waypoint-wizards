@@ -22,6 +22,7 @@ import { getDayColour } from "@/lib/dayColours";
 import { DayLegs, ModeLeg } from "@/types/directions";
 import { ColouredPolylineSegment } from "../map/Map";
 import CollaboratorPanel from "./CollaboratorPanel";
+import BudgetPanel from "./BudgetPanel";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import { RoomProvider, useStorage, useMutation, useOthers, useRoom } from "@/lib/liveblocks";
 import { AttractionEntry } from "@/lib/liveblocks";
@@ -88,6 +89,7 @@ function TripClient({
                     lng: a.lng,
                     rating: a.rating ?? 0,
                     reviews: a.reviews,
+                    photoRef: a.photoRef,
                   })
               )
             ),
@@ -130,7 +132,9 @@ function TripInner({
   const start = new Date(startDate);
   const end = new Date(endDate);
   const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
+  const [panTarget, setPanTarget] = useState<Attraction | null>(null);
   const cardRefs = useRef<{ [placeId: string]: HTMLDivElement | null }>({});
+  const listContainerRef = useRef<HTMLDivElement>(null);
 
   const itinerary = useStorage((root) => {
     const result: { [day: number]: Attraction[] } = {};
@@ -152,7 +156,7 @@ function TripInner({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Trip details / routing state (from HEAD)
-  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details">("attractions");
+  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details" | "budget">("attractions");
   const [selectedDay, setSelectedDay] = useState(1);
   const [dayLegs, setDayLegs] = useState<{ [day: number]: DayLegs }>({});
   const [dayPolylines, setDayPolylines] = useState<{
@@ -170,6 +174,7 @@ function TripInner({
 
   const markersToShow =
     leftPanelView === "details" ? itinerary[selectedDay] ?? [] : attractions;
+
 
   const markerNumbers: { [key: string]: number } =
     leftPanelView === "details"
@@ -205,6 +210,7 @@ function TripInner({
           lng: attraction.lng,
           rating: attraction.rating ?? 0,
           reviews: attraction.reviews,
+          photoRef: attraction.photoRef,
         })
       );
     },
@@ -232,6 +238,7 @@ function TripInner({
         lng: obj.get("lng"),
         rating: obj.get("rating"),
         reviews: obj.get("reviews"),
+        photoRef: obj.get("photoRef"),
       };
       fromList.delete(fromIndex);
       const toList = lb.get(String(params.toDay));
@@ -375,11 +382,18 @@ function TripInner({
   }, [itineraryKey, selectedDay]);
 
   useEffect(() => {
-    if (selectedAttraction) {
-      cardRefs.current[selectedAttraction.placeId]?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
+    if (!selectedAttraction) return;
+    const card = cardRefs.current[selectedAttraction.placeId];
+    const container = listContainerRef.current;
+    if (!card || !container) return;
+    const cardRect = card.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const cardTopInContainer = cardRect.top - containerRect.top + container.scrollTop;
+    const cardBottomInContainer = cardTopInContainer + card.offsetHeight;
+    const visibleTop = container.scrollTop;
+    const visibleBottom = visibleTop + container.clientHeight;
+    if (cardTopInContainer < visibleTop || cardBottomInContainer > visibleBottom) {
+      container.scrollTo({ top: cardTopInContainer - 8, behavior: "smooth" });
     }
   }, [selectedAttraction]);
 
@@ -494,7 +508,7 @@ function TripInner({
         }}
       >
         <main
-          className="flex flex-col h-screen bg-[#F9F9F9]"
+          className="flex h-screen bg-[#F9F9F9]"
           onPointerMove={(e) =>
             room.updatePresence({ cursor: { x: e.clientX, y: e.clientY } })
           }
@@ -506,8 +520,6 @@ function TripInner({
             currentUserRole={currentUserRole}
             initialCollaborators={collaborators}
           />
-
-          <div className="flex flex-1 overflow-hidden">
 
           {/* Live cursors for other collaborators */}
           {others.map((other) =>
@@ -533,20 +545,21 @@ function TripInner({
           )}
 
           <div className="p-8 w-1/3 flex flex-col shrink-0">
-            {/* Toggle between attraction list and trip details */}
-            <div className="flex justify-end mb-2">
-              <button
-                onClick={() =>
-                  setLeftPanelView(
-                    leftPanelView === "attractions" ? "details" : "attractions"
-                  )
-                }
-                className="px-4 py-2 rounded-full text-sm font-semibold shadow bg-white border hover:bg-gray-50 transition-colors"
-              >
-                {leftPanelView === "attractions"
-                  ? "Trip Details →"
-                  : "← Attractions"}
-              </button>
+            {/* Tab navigation */}
+            <div className="flex mb-2 bg-white border rounded-full p-1 shadow-sm">
+              {(["attractions", "details", "budget"] as const).map((view) => (
+                <button
+                  key={view}
+                  onClick={() => setLeftPanelView(view)}
+                  className={`flex-1 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors ${
+                    leftPanelView === view
+                      ? "bg-red-500 text-white"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {view === "attractions" ? "Explore" : view === "details" ? "Details" : "Budget"}
+                </button>
+              ))}
             </div>
 
             <h1 className="text-4xl font-bold">
@@ -563,7 +576,7 @@ function TripInner({
                   lng={center.lng}
                   onResults={(results) => setAttractions(sortAttractions(results))}
                 />
-                <div className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
+                <div ref={listContainerRef} className="mt-4 flex flex-col gap-2 overflow-y-auto flex-1">
                   {attractions.map((attraction) => (
                     <DraggableAttractionItem
                       key={attraction.placeId}
@@ -571,7 +584,7 @@ function TripInner({
                       isSelected={
                         selectedAttraction?.placeId === attraction.placeId
                       }
-                      onClick={() => setSelectedAttraction(attraction)}
+                      onClick={() => { setPanTarget(attraction); setSelectedAttraction(attraction); }}
                       cardRef={(el) => {
                         cardRefs.current[attraction.placeId] = el;
                       }}
@@ -579,13 +592,19 @@ function TripInner({
                   ))}
                 </div>
               </>
-            ) : (
+            ) : leftPanelView === "details" ? (
               <TripDetailsPanel
                 itinerary={itinerary}
                 days={days}
                 selectedDay={selectedDay}
                 onSelectDay={setSelectedDay}
                 dayLegs={dayLegs}
+              />
+            ) : (
+              <BudgetPanel
+                itineraryId={itineraryId}
+                collaborators={collaborators}
+                currentUserId={currentUserId}
               />
             )}
           </div>
@@ -630,6 +649,7 @@ function TripInner({
               center={center}
               selectedAttraction={selectedAttraction}
               onSelectAttraction={setSelectedAttraction}
+              panTarget={panTarget}
               routePolyline={dayPolylines[mapRouteMode]}
               routeColour={getDayColour(selectedDay)}
               markerNumbers={markerNumbers}
@@ -646,7 +666,6 @@ function TripInner({
             isSaving={isSaving}
             hasUnsavedChanges={hasUnsavedChanges}
           />
-          </div>
         </main>
 
         <DragOverlay>

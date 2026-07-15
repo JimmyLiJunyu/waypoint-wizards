@@ -73,9 +73,6 @@ model User {
   tripPhoto  TripPhoto[]
   followers  Follow[]       @relation("UserFollowers")
   following  Follow[]       @relation("UserFollowing")
-  itinearies     Collaborator[]
-  followers      Follow[]       @relation("UserFollowers")
-  following      Follow[]       @relation("UserFollowing")
   expenses       Expense[]
   expenseSplits  ExpenseSplit[]
 }

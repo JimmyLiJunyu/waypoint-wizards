@@ -19,6 +19,47 @@ model Follow {
   @@id([followerId, followingId])
 }
 
+model Post {
+  id String @id @default(uuid())
+  itineraryId String
+  ownerId String
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  itinerary Itinerary @relation (fields: [itineraryId], references: [id], onDelete: Cascade)
+  owner User @relation("OwnerId", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  postLike PostLike[]
+  photo Photo[]
+
+  @@unique([ownerId, itineraryId])
+}
+
+model PostLike {
+  userId String
+  userLiked User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId String
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@id([userId, postId])
+}
+
+model TripPhoto {
+  id String @id @default(uuid())
+  url String
+  itineraryId String
+  itinerary Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  uploadedBy String
+  user User @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+}
+
+model Photo {
+  id String @id @default(uuid())
+  url String
+  postId String
+  post Post @relation(fields: [postId], references:[id], onDelete: Cascade)
+}
+
 model User {
   id         String         @id @default(uuid())
   email      String         @unique
@@ -27,6 +68,9 @@ model User {
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
   itinearies Collaborator[]
+  posts      Post[]         @relation("OwnerId")
+  postLike   PostLike[]
+  tripPhoto  TripPhoto[]
   followers  Follow[]       @relation("UserFollowers")
   following  Follow[]       @relation("UserFollowing")
 }
@@ -51,6 +95,8 @@ model Itinerary {
   collaborators  Collaborator[]
   destinations   Destination[]
   itineraryItems ItineraryItem[]
+  posts Post[]
+  tripPhotos TripPhoto[]
 }
 
 model Collaborator {
@@ -59,7 +105,7 @@ model Collaborator {
   userId      String
   itineraryId String
   itinerary   Itinerary @relation(fields: [itineraryId], references: [id])
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itineraryId])
 }

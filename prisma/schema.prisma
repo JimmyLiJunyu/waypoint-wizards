@@ -97,9 +97,20 @@ model Itinerary {
   collaborators  Collaborator[]
   destinations   Destination[]
   itineraryItems ItineraryItem[]
-  posts Post[]
-  tripPhotos TripPhoto[]
+  posts          Post[]
+  tripPhotos     TripPhoto[]
   expenses       Expense[]
+  dayNotes       DayNote[]
+}
+
+model DayNote {
+  id          Int       @id @default(autoincrement())
+  itineraryId String
+  dayNumber   Int
+  note        String    @default("")
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@unique([itineraryId, dayNumber])
 }
 
 model Collaborator {

@@ -1,15 +1,34 @@
+"use client";
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Attraction } from '@/types/attractions';
 import SortableAttractionItem from './SortableAttractionItem';
+import { useState, useEffect } from 'react';
 
-function DayCard({ day, date, attractions, onRemove } : {
+function DayCard({ day, date, attractions, onRemove, note, onUpdateNote } : {
     day: number;
     date: Date;
     attractions: Attraction[];
-    onRemove: (instanceId: string) => void
+    onRemove: (instanceId: string) => void;
+    note: string;
+    onUpdateNote: (day: number, note: string) => void;
 }) {
     const { setNodeRef, isOver } = useDroppable({ id: `day-${day}` });
+    const [localNote, setLocalNote] = useState(note);
+
+    // Sync if the note changes externally (e.g. AI generate or clear)
+    useEffect(() => {
+        setLocalNote(note);
+    }, [note]);
+
+    // Debounce writes to Liveblocks
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (localNote !== note) onUpdateNote(day, localNote);
+        }, 400);
+        return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [localNote]);
 
     return (
         <div className='bg-white border rounded-xl p-4 mb-3'>
@@ -18,7 +37,6 @@ function DayCard({ day, date, attractions, onRemove } : {
             <div
                 ref={setNodeRef}
                 className={`min-h-24 rounded-lg border-2 border-dashed p-2 flex flex-col gap-2 transition-colors ${isOver ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}>
-                    {/* attractions inside each daycard is sortable */}
                     <SortableContext
                         items={attractions.map(a => a.instanceId!)}
                         strategy={verticalListSortingStrategy}>
@@ -34,6 +52,13 @@ function DayCard({ day, date, attractions, onRemove } : {
                         )}
                     </SortableContext>
             </div>
+            <textarea
+                value={localNote}
+                onChange={(e) => setLocalNote(e.target.value)}
+                placeholder={`Add notes for Day ${day}...`}
+                rows={2}
+                className='mt-3 w-full text-sm text-gray-700 placeholder-gray-400 border border-gray-200 rounded-lg px-3 py-2 resize-none outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 transition-colors'
+            />
         </div>
     )
 }

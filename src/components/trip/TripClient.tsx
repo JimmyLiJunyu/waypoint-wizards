@@ -56,6 +56,7 @@ function TripClient({
   startDate,
   endDate,
   savedItinerary,
+  savedDayNotes = {},
   currentUserId,
   currentUserRole,
   collaborators,
@@ -65,6 +66,7 @@ function TripClient({
   startDate: string;
   endDate: string;
   savedItinerary: { [day: number]: Attraction[] };
+  savedDayNotes?: { [day: number]: string };
   currentUserId: string;
   currentUserRole: string;
   collaborators: CollaboratorRecord[];
@@ -94,6 +96,9 @@ function TripClient({
               )
             ),
           ])
+        ),
+        dayNotes: new LiveMap(
+          Object.entries(savedDayNotes).map(([day, note]) => [day, note])
         ),
       })}
     >
@@ -145,6 +150,16 @@ function TripInner({
     return result;
   }) ?? {};
 
+  const dayNotes = useStorage((root) => {
+    if (!root.dayNotes) return {};
+    const result: { [day: number]: string } = {};
+    const entries = Object.entries(root.dayNotes as unknown as Record<string, string>);
+    entries.forEach(([dayStr, note]) => {
+      if (note) result[parseInt(dayStr)] = note;
+    });
+    return result;
+  }) ?? {};
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null);
   const sensors = useSensors(
@@ -154,6 +169,8 @@ function TripInner({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [skippedPlaces, setSkippedPlaces] = useState<string[]>([]);
 
   // Trip details / routing state (from HEAD)
   const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details" | "budget">("attractions");
@@ -263,6 +280,84 @@ function TripInner({
     },
     []
   );
+
+  const updateDayNote = useMutation(
+    ({ storage }, { day, note }: { day: number; note: string }) => {
+      const notes = storage.get("dayNotes");
+      if (!notes) return;
+      notes.set(String(day), note);
+    },
+    []
+  );
+
+  const clearAll = useMutation(({ storage }) => {
+    const lb = storage.get("itinerary");
+    const itineraryKeys = [...lb.keys()];
+    itineraryKeys.forEach((key) => lb.set(key, new LiveList([])));
+    const notes = storage.get("dayNotes");
+    if (notes) {
+      const noteKeys = [...notes.keys()];
+      noteKeys.forEach((key) => notes.delete(key));
+    }
+  }, []);
+
+  const applyAiItinerary = useMutation(
+    (
+      { storage },
+      {
+        days,
+        mode,
+      }: {
+        days: { day: number; attractions: Omit<AttractionEntry, "instanceId">[]; description?: string }[];
+        mode: "scratch" | "ontop";
+      }
+    ) => {
+      const lb = storage.get("itinerary");
+      const notes = storage.get("dayNotes");
+      days.forEach(({ day, attractions, description }) => {
+        const key = String(day);
+        const existing = lb.get(key);
+        if (mode === "ontop" && existing && existing.length > 0) return;
+        lb.set(
+          key,
+          new LiveList(
+            attractions.map(
+              (a) =>
+                new LiveObject({
+                  ...a,
+                  instanceId: `${a.placeId}-${Date.now()}-${Math.random()}`,
+                })
+            )
+          )
+        );
+        if (description && notes) {
+          const existingNote = notes.get(key) ?? "";
+          if (mode === "scratch" || !existingNote.trim()) {
+            notes.set(key, description);
+          }
+        }
+      });
+    },
+    []
+  );
+
+  const handleAiGenerate = async (mode: "scratch" | "ontop") => {
+    setIsGenerating(true);
+    setSkippedPlaces([]);
+    try {
+      const res = await fetch(`/api/itinerary/${itineraryId}/ai-generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destination, numDays, lat: center.lat, lng: center.lng }),
+      });
+      const data = await res.json();
+      applyAiItinerary({ days: data.days, mode });
+      setSkippedPlaces(data.skipped ?? []);
+      setHasUnsavedChanges(true);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     const geocode = async () => {
@@ -403,7 +498,7 @@ function TripInner({
       await fetch(`/api/itinerary/${itineraryId}/save`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itinerary }),
+        body: JSON.stringify({ itinerary, dayNotes }),
       });
       setHasUnsavedChanges(false);
     } finally {
@@ -599,6 +694,7 @@ function TripInner({
                 selectedDay={selectedDay}
                 onSelectDay={setSelectedDay}
                 dayLegs={dayLegs}
+                dayNotes={dayNotes}
               />
             ) : (
               <BudgetPanel
@@ -665,6 +761,12 @@ function TripInner({
             onSave={handleSave}
             isSaving={isSaving}
             hasUnsavedChanges={hasUnsavedChanges}
+            onAiGenerate={handleAiGenerate}
+            isGenerating={isGenerating}
+            skippedPlaces={skippedPlaces}
+            dayNotes={dayNotes}
+            onUpdateNote={(day, note) => updateDayNote({ day, note })}
+            onClear={clearAll}
           />
         </main>
 

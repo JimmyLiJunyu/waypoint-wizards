@@ -26,4 +26,4 @@ export async function POST(req: NextRequest) {
     .getPublicUrl(`${userId}/avatar`)
 
   return NextResponse.json({ publicUrl })
-}
+} 

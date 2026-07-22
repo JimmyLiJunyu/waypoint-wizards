@@ -118,6 +118,13 @@ export function Sidebar() {
             Socials
           </Link>
           <Link
+            href="/feed"
+            onClick={closeSideBar}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
+          >
+            Feed
+          </Link>
+          <Link
             href="/ai-planner"
             onClick={closeSideBar}
             className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"

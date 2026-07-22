@@ -1,11 +1,15 @@
 import { getUserProfile } from '@/services/socialsServices'
+import { getUserPosts } from '@/services/feedServices'
+import { getCurrUserId } from '@/lib/auth/session'
 import { User } from 'lucide-react'
 import Image from 'next/image'
+import PostCard from '@/components/feed/PostCard'
 
 export default async function Profile({ params }: { params: Promise<{id: string}> }) {
     const { id } = await params
+    const currUserId = await getCurrUserId()
     const { userProfile, numFollowers, numFollowing } = await getUserProfile(id)
-    
+    const posts = await getUserPosts(id)
 
     return (
         <main className="min-h-screen bg-[#F9F9F9] p-8">
@@ -30,6 +34,18 @@ export default async function Profile({ params }: { params: Promise<{id: string}
                         </div>
                     </div>
 
+                </div>
+
+                <div className="mt-8">
+                    <h2 className="text-xl font-bold mb-4">Posts</h2>
+                    <div className="flex flex-col gap-6">
+                        {posts.length === 0 && (
+                            <p className="text-gray-500 text-sm">No posts yet.</p>
+                        )}
+                        {currUserId && posts.map((post) => (
+                            <PostCard key={post.id} post={post} currentUserId={currUserId} />
+                        ))}
+                    </div>
                 </div>
 
             </div>

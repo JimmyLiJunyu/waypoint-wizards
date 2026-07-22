@@ -23,6 +23,7 @@ import { DayLegs, ModeLeg } from "@/types/directions";
 import { ColouredPolylineSegment } from "../map/Map";
 import CollaboratorPanel from "./CollaboratorPanel";
 import BudgetPanel from "./BudgetPanel";
+import TripPhotos from "./TripPhotos";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import { RoomProvider, useStorage, useMutation, useOthers, useRoom } from "@/lib/liveblocks";
 import { AttractionEntry } from "@/lib/liveblocks";
@@ -173,7 +174,7 @@ function TripInner({
   const [skippedPlaces, setSkippedPlaces] = useState<string[]>([]);
 
   // Trip details / routing state (from HEAD)
-  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details" | "budget">("attractions");
+  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details" | "budget" | "photos">("attractions");
   const [selectedDay, setSelectedDay] = useState(1);
   const [dayLegs, setDayLegs] = useState<{ [day: number]: DayLegs }>({});
   const [dayPolylines, setDayPolylines] = useState<{
@@ -642,7 +643,7 @@ function TripInner({
           <div className="p-8 w-1/3 flex flex-col shrink-0">
             {/* Tab navigation */}
             <div className="flex mb-2 bg-white border rounded-full p-1 shadow-sm">
-              {(["attractions", "details", "budget"] as const).map((view) => (
+              {(["attractions", "details", "budget", "photos"] as const).map((view) => (
                 <button
                   key={view}
                   onClick={() => setLeftPanelView(view)}
@@ -652,7 +653,7 @@ function TripInner({
                       : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  {view === "attractions" ? "Explore" : view === "details" ? "Details" : "Budget"}
+                  {view === "attractions" ? "Explore" : view === "details" ? "Details" : view === "budget" ? "Budget" : "Photos"}
                 </button>
               ))}
             </div>
@@ -696,12 +697,14 @@ function TripInner({
                 dayLegs={dayLegs}
                 dayNotes={dayNotes}
               />
-            ) : (
+            ) : leftPanelView === "budget" ? (
               <BudgetPanel
                 itineraryId={itineraryId}
                 collaborators={collaborators}
                 currentUserId={currentUserId}
               />
+            ) : (
+              <TripPhotos itineraryId={itineraryId} currentUserId={currentUserId} />
             )}
           </div>
 

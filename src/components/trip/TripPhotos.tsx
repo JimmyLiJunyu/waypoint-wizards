@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Trash2, Upload } from "lucide-react";
+import { Trash2, Upload, Share2 } from "lucide-react";
 
 type TripPhoto = {
   id: string;
@@ -17,6 +17,7 @@ type Photo = {
 
 type Post = {
   id: string;
+  published: boolean;
   photo: Photo[];
 };
 
@@ -31,6 +32,7 @@ function TripPhotos({
   const [post, setPost] = useState<Post | null>(null);
   const [uploadingGroup, setUploadingGroup] = useState(false);
   const [uploadingMine, setUploadingMine] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   const loadGroupPhotos = async () => {
     const res = await fetch(`/api/itinerary/${itineraryId}/trip-photos`);
@@ -39,10 +41,8 @@ function TripPhotos({
   };
 
   const loadMyPost = async () => {
-    const upsertRes = await fetch(`/api/itinerary/${itineraryId}/posts`, {
-      method: "POST",
-    });
-    const data = await upsertRes.json();
+    const res = await fetch(`/api/itinerary/${itineraryId}/posts`);
+    const data = await res.json();
     setPost(data.post ?? null);
   };
 
@@ -52,6 +52,35 @@ function TripPhotos({
     loadMyPost();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itineraryId]);
+
+  // Creates a draft (unpublished) post on first use, so a photo has something to attach to.
+  // Never touches `published` — publishing only happens via handleTogglePublish.
+  const ensurePost = async (): Promise<Post | null> => {
+    if (post) return post;
+    const res = await fetch(`/api/itinerary/${itineraryId}/posts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    setPost(data.post ?? null);
+    return data.post ?? null;
+  };
+
+  const handleTogglePublish = async () => {
+    setPublishing(true);
+    try {
+      const res = await fetch(`/api/itinerary/${itineraryId}/posts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published: !post?.published }),
+      });
+      const data = await res.json();
+      setPost(data.post ?? null);
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   const handleUploadGroup = async (file: File) => {
     setUploadingGroup(true);
@@ -76,12 +105,13 @@ function TripPhotos({
   };
 
   const handleUploadMine = async (file: File) => {
-    if (!post) return;
     setUploadingMine(true);
     try {
+      const currentPost = await ensurePost();
+      if (!currentPost) return;
       const formData = new FormData();
       formData.append("file", file);
-      await fetch(`/api/posts/${post.id}/photos`, {
+      await fetch(`/api/posts/${currentPost.id}/photos`, {
         method: "POST",
         body: formData,
       });
@@ -101,6 +131,23 @@ function TripPhotos({
 
   return (
     <div className="mt-4 flex flex-col gap-6 overflow-y-auto flex-1">
+      <button
+        onClick={handleTogglePublish}
+        disabled={publishing}
+        className={`flex items-center justify-center gap-2 py-2 rounded-full text-sm font-semibold transition-colors disabled:opacity-50 ${
+          post?.published
+            ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            : "bg-red-500 text-white hover:bg-red-600"
+        }`}
+      >
+        <Share2 className="size-4" />
+        {publishing
+          ? "Updating..."
+          : post?.published
+          ? "Posted to Socials — Tap to Remove"
+          : "Post Trip to Socials"}
+      </button>
+
       <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-sm">Group Photos</h2>
@@ -153,7 +200,7 @@ function TripPhotos({
               type="file"
               accept="image/*"
               className="hidden"
-              disabled={uploadingMine || !post}
+              disabled={uploadingMine}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) handleUploadMine(file);

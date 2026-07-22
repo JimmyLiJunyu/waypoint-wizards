@@ -60,7 +60,7 @@ function ItinerarySidebar({
   if (!isOpen) return null;
 
   return (
-    <div className="w-160 h-screen bg-[#F9F9F9] border-l p-4 overflow-y-auto flex-shrink-0">
+    <div className="w-full md:w-160 h-full bg-[#F9F9F9] border-l p-4 overflow-y-auto flex-shrink-0">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-2xl font-bold">Itinerary</h2>
         <div className="flex items-center gap-2">

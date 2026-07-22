@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
 
 type CollaboratorUser = { id: string; name: string; imageUrl: string | null };
 type CollaboratorRecord = { id: number; role: string; userId: string; user: CollaboratorUser };
@@ -46,6 +47,8 @@ export default function BudgetPanel({
   const [amount, setAmount] = useState("");
   const [payerId, setPayerId] = useState(currentUserId);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`/api/itinerary/${itineraryId}/expenses`)
@@ -94,24 +97,47 @@ export default function BudgetPanel({
     );
   }
 
+  async function deleteExpense(expenseId: number) {
+    setDeletingId(expenseId);
+    try {
+      const res = await fetch(`/api/expenses/${expenseId}`, { method: "DELETE" });
+      if (res.ok) {
+        setExpenses((prev) => prev.filter((exp) => exp.id !== expenseId));
+      }
+    } finally {
+      setDeletingId(null);
+      setConfirmingDeleteId(null);
+    }
+  }
+
+  // Sourced from both current collaborators and the expenses themselves, so someone who
+  // paid or was split on an expense still resolves to a name even after leaving the trip.
+  const userMap: { [id: string]: string } = {};
+  collaborators.forEach((c) => { userMap[c.userId] = c.user.name; });
+  expenses.forEach((exp) => {
+    userMap[exp.payerId] = exp.payer.name;
+    exp.splits.forEach((split) => { userMap[split.userId] = split.user.name; });
+  });
+
   function calculateBalances(): Balance[] {
     const net: { [key: string]: number } = {};
-    const userMap: { [id: string]: string } = {};
-    collaborators.forEach((c) => { userMap[c.userId] = c.user.name; });
+    // UUIDs contain hyphens, so joining/splitting on "-" corrupts the pair — use "|" instead.
+    const SEP = "|";
 
     expenses.forEach((exp) => {
       exp.splits.forEach((split) => {
         if (split.settled || split.userId === exp.payerId) return;
         const [a, b] = [exp.payerId, split.userId].sort();
         const sign = exp.payerId === a ? 1 : -1;
-        net[`${a}-${b}`] = (net[`${a}-${b}`] ?? 0) + sign * split.share;
+        const key = `${a}${SEP}${b}`;
+        net[key] = (net[key] ?? 0) + sign * split.share;
       });
     });
 
     return Object.entries(net)
       .filter(([, amt]) => Math.abs(amt) > 0.005)
       .map(([key, amt]) => {
-        const [a, b] = key.split("-");
+        const [a, b] = key.split(SEP);
         return amt > 0
           ? { fromId: b, fromName: userMap[b] ?? b, toId: a, toName: userMap[a] ?? a, amount: amt }
           : { fromId: a, fromName: userMap[a] ?? a, toId: b, toName: userMap[b] ?? b, amount: -amt };
@@ -119,7 +145,7 @@ export default function BudgetPanel({
   }
 
   const balances = calculateBalances();
-  const displayName = (id: string) => id === currentUserId ? "You" : (collaborators.find(c => c.userId === id)?.user.name ?? id);
+  const displayName = (id: string) => id === currentUserId ? "You" : (userMap[id] ?? id);
 
   return (
     <div className="mt-4 flex flex-col gap-4 overflow-y-auto flex-1">
@@ -200,8 +226,41 @@ export default function BudgetPanel({
             <div key={exp.id} className="bg-white border rounded-xl p-3 flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-sm">{exp.description}</span>
-                <span className="font-bold text-sm">${exp.amount.toFixed(2)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm">${exp.amount.toFixed(2)}</span>
+                  {exp.payerId === currentUserId && (
+                    <button
+                      onClick={() => setConfirmingDeleteId(exp.id)}
+                      title="Delete expense"
+                      className="text-gray-300 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {confirmingDeleteId === exp.id && (
+                <div className="flex items-center justify-between gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-xs">
+                  <span className="text-red-600">Delete this expense for everyone?</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setConfirmingDeleteId(null)}
+                      className="font-semibold text-gray-500 hover:text-gray-700"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => deleteExpense(exp.id)}
+                      disabled={deletingId === exp.id}
+                      className="font-semibold text-red-600 hover:text-red-700 disabled:opacity-50"
+                    >
+                      {deletingId === exp.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <p className="text-xs text-gray-500">
                 Paid by <span className="font-medium">{displayName(exp.payerId)}</span>
                 {" · "}${(exp.amount / exp.splits.length).toFixed(2)} each

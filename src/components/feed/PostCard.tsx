@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Heart, User } from "lucide-react";
+import { Heart, User, ImageOff, Pencil, EyeOff, Check, X } from "lucide-react";
+import PostPhotoCarousel from "./PostPhotoCarousel";
 
 type PostPhoto = { id: string; url: string };
 type CollaboratorEntry = { user: { id: string; name: string; imageUrl: string | null } };
@@ -14,6 +15,7 @@ export type PostCardData = {
   owner: { id: string; name: string; imageUrl: string | null };
   photo: PostPhoto[];
   itinerary: {
+    id: string;
     title: string;
     location: string;
     startDate: string | Date;
@@ -27,13 +29,22 @@ export type PostCardData = {
 function PostCard({
   post,
   currentUserId,
+  canManage = false,
 }: {
   post: PostCardData;
   currentUserId: string;
+  canManage?: boolean;
 }) {
   const [liked, setLiked] = useState(post.postLike.some((l) => l.userId === currentUserId));
   const [likeCount, setLikeCount] = useState(post.postLike.length);
   const [pending, setPending] = useState(false);
+
+  const [description, setDescription] = useState(post.description);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftDescription, setDraftDescription] = useState(post.description ?? "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isTakingDown, setIsTakingDown] = useState(false);
+  const [takenDown, setTakenDown] = useState(false);
 
   const photos = [...post.photo, ...post.itinerary.tripPhotos];
   const wentWith = (post.itinerary.collaborators ?? []).filter(
@@ -55,22 +66,78 @@ function PostCard({
     }
   };
 
+  const saveDescription = async () => {
+    setIsSaving(true);
+    try {
+      await fetch(`/api/itinerary/${post.itinerary.id}/posts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: draftDescription }),
+      });
+      setDescription(draftDescription);
+      setIsEditing(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const takeDown = async () => {
+    setIsTakingDown(true);
+    try {
+      await fetch(`/api/itinerary/${post.itinerary.id}/posts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published: false }),
+      });
+      setTakenDown(true);
+    } finally {
+      setIsTakingDown(false);
+    }
+  };
+
+  if (takenDown) return null;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6">
-      <div className="flex items-center gap-3">
-        <div className="relative size-10 shrink-0 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-          {post.owner.imageUrl ? (
-            <Image src={post.owner.imageUrl} alt={post.owner.name} fill className="object-cover" />
-          ) : (
-            <User className="size-5 text-gray-500" />
-          )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="relative size-10 shrink-0 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+            {post.owner.imageUrl ? (
+              <Image src={post.owner.imageUrl} alt={post.owner.name} fill className="object-cover" />
+            ) : (
+              <User className="size-5 text-gray-500" />
+            )}
+          </div>
+          <div>
+            <p className="font-semibold">{post.owner.name}</p>
+            <p className="text-xs text-gray-500">
+              {post.itinerary.title} · {post.itinerary.location}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="font-semibold">{post.owner.name}</p>
-          <p className="text-xs text-gray-500">
-            {post.itinerary.title} · {post.itinerary.location}
-          </p>
-        </div>
+
+        {canManage && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                setDraftDescription(description ?? "");
+                setIsEditing(true);
+              }}
+              title="Edit caption"
+              className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+            >
+              <Pencil className="size-4" />
+            </button>
+            <button
+              onClick={takeDown}
+              disabled={isTakingDown}
+              title="Take down post"
+              className="p-1.5 rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
+            >
+              <EyeOff className="size-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {wentWith.length > 0 && (
@@ -94,17 +161,45 @@ function PostCard({
         </div>
       )}
 
-      {photos.length > 0 && (
-        <div className="grid grid-cols-3 gap-1 mt-4">
-          {photos.map((photo) => (
-            <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden">
-              <Image src={photo.url} alt="Trip photo" fill className="object-cover" />
-            </div>
-          ))}
+      {photos.length > 0 ? (
+        <PostPhotoCarousel photos={photos} />
+      ) : (
+        <div className="mt-4 flex flex-col items-center justify-center gap-1.5 py-8 rounded-lg bg-gray-50 text-gray-400">
+          <ImageOff className="size-6" />
+          <span className="text-xs">No photos</span>
         </div>
       )}
 
-      {post.description && <p className="mt-3 text-sm text-gray-700">{post.description}</p>}
+      {isEditing ? (
+        <div className="mt-3 flex flex-col gap-2">
+          <textarea
+            value={draftDescription}
+            onChange={(e) => setDraftDescription(e.target.value)}
+            placeholder="Add a caption..."
+            className="w-full border rounded-lg p-2 text-sm resize-none"
+            rows={3}
+          />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={saveDescription}
+              disabled={isSaving}
+              className="flex items-center gap-1 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-full px-3 py-1.5 transition-colors disabled:opacity-50"
+            >
+              <Check className="size-3.5" />
+              {isSaving ? "Saving..." : "Save"}
+            </button>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-full px-3 py-1.5 transition-colors"
+            >
+              <X className="size-3.5" />
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        description && <p className="mt-3 text-sm text-gray-700">{description}</p>
+      )}
 
       <button
         onClick={toggleLike}

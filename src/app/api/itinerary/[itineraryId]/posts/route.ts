@@ -36,10 +36,22 @@ export async function POST(request: NextRequest, { params }: Params) {
             return NextResponse.json({ error: "Not a collaborator on this trip" }, { status: 403 })
         }
 
+        const body = await request.json().catch(() => ({}))
+        const published = typeof body.published === "boolean" ? body.published : undefined
+        const description = typeof body.description === "string" ? body.description : undefined
+
         const post = await prisma.post.upsert({
             where: { ownerId_itineraryId: { ownerId: userId, itineraryId } },
-            create: { ownerId: userId, itineraryId },
-            update: {},
+            create: {
+                ownerId: userId,
+                itineraryId,
+                ...(published !== undefined && { published }),
+                ...(description !== undefined && { description }),
+            },
+            update: {
+                ...(published !== undefined && { published }),
+                ...(description !== undefined && { description }),
+            },
             include: { photo: true }
         })
 

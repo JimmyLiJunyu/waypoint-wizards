@@ -5,6 +5,7 @@ import { User } from "lucide-react";
 import Image from "next/image";
 import { useUser } from "@/context/UserContext";
 import { useFollowStatus } from "@/hooks/useFollowStatus";
+import FollowStatusButton from "./FollowStatusButton";
 
 interface FollowerCardProps {
   id: string;
@@ -16,14 +17,9 @@ interface FollowerCardProps {
 export default function FollowerSearchCard({ id, name, imageUrl, followStatus }: FollowerCardProps) {
   const router = useRouter();
   const { user } = useUser();
-  const { status, follow } = useFollowStatus(id, followStatus);
+  const { status, follow, unfollow } = useFollowStatus(id, followStatus);
 
   const isOwnAccount = user?.id === id;
-
-  const buttonLabel = status === "ACCEPTED" ? "Following" : status === "PENDING" ? "Requested" : "Follow";
-  const buttonStyle = status === "NONE"
-    ? "bg-blue-500 text-white hover:bg-blue-600"
-    : "bg-gray-200 text-gray-500 cursor-not-allowed";
 
   return (
     <div
@@ -37,13 +33,7 @@ export default function FollowerSearchCard({ id, name, imageUrl, followStatus }:
       )}
       <span className="font-medium flex-1">{name}</span>
       {!isOwnAccount && (
-        <button
-          onClick={(e) => { e.stopPropagation(); follow(); }}
-          disabled={status !== "NONE"}
-          className={`text-sm px-3 py-1 rounded-full ${buttonStyle}`}
-        >
-          {buttonLabel}
-        </button>
+        <FollowStatusButton status={status} name={name} onFollow={follow} onUnfollow={unfollow} />
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Bell, X } from "lucide-react";
 import FollowRequestCard from "./FollowRequestCard";
 
 interface FollowerRequest {
@@ -42,49 +43,58 @@ export default function RequestList({onAccept} : {onAccept: () => void}) {
 
   return (
     <>
-      <div className="relative inline-block">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium"
-        >
-          Requests
-        </button>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-medium transition-colors"
+      >
+        <Bell className="size-4" />
+        Requests
         {numReq > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full 2-5 h-5 flex items-center justify-center">
-            {numReq}
+          <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold shadow">
+            {numReq > 9 ? "9+" : numReq}
           </span>
         )}
-      </div>
+      </button>
 
       {isOpen && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-xl z-50 p-6 animate-in fade-in slide-in-from-top-8 duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Follow Requests</h2>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-            >
-              X
-            </button>
-          </div>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setIsOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 animate-in fade-in slide-in-from-top-8 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Follow Requests</h2>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
 
-          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-          <div className="overflow-y-auto max-h-96 flex flex-col gap-1">
-            {loading ? (
-              <h1>Loading...</h1>
-            ) : (
-              data.map((req) => (
-                <FollowRequestCard
-                  key={req.id}
-                  id={req.id}
-                  name={req.name}
-                  imageUrl={req.imageUrl}
-                  followStatus={"PENDING"}
-                  onReject={(id: string) => setData(prev => prev.filter(r => r.id !== id))}
-                  onAccept={onAccept}
-                />
-              ))
-            )}
+            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            <div className="overflow-y-auto max-h-96 flex flex-col gap-1">
+              {loading ? (
+                <p className="text-sm text-gray-400">Loading...</p>
+              ) : data.length === 0 ? (
+                <p className="text-sm text-gray-400">No pending requests.</p>
+              ) : (
+                data.map((req) => (
+                  <FollowRequestCard
+                    key={req.id}
+                    id={req.id}
+                    name={req.name}
+                    imageUrl={req.imageUrl}
+                    followStatus={"PENDING"}
+                    onReject={(id: string) => setData(prev => prev.filter(r => r.id !== id))}
+                    onAccept={onAccept}
+                  />
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

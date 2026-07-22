@@ -24,6 +24,7 @@ import { ColouredPolylineSegment } from "../map/Map";
 import CollaboratorPanel from "./CollaboratorPanel";
 import BudgetPanel from "./BudgetPanel";
 import TripPhotos from "./TripPhotos";
+import TripTitleEditor from "./TripTitleEditor";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import { RoomProvider, useStorage, useMutation, useOthers, useRoom } from "@/lib/liveblocks";
 import { AttractionEntry } from "@/lib/liveblocks";
@@ -53,6 +54,7 @@ type CollaboratorRecord = {
 
 function TripClient({
   itineraryId,
+  title,
   destination,
   startDate,
   endDate,
@@ -63,6 +65,7 @@ function TripClient({
   collaborators,
 }: {
   itineraryId: string;
+  title: string;
   destination: string;
   startDate: string;
   endDate: string;
@@ -105,6 +108,7 @@ function TripClient({
     >
       <TripInner
         itineraryId={itineraryId}
+        title={title}
         destination={destination}
         startDate={startDate}
         endDate={endDate}
@@ -118,6 +122,7 @@ function TripClient({
 
 function TripInner({
   itineraryId,
+  title,
   destination,
   startDate,
   endDate,
@@ -126,6 +131,7 @@ function TripInner({
   collaborators,
 }: {
   itineraryId: string;
+  title: string;
   destination: string;
   startDate: string;
   endDate: string;
@@ -175,6 +181,8 @@ function TripInner({
 
   // Trip details / routing state (from HEAD)
   const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details" | "budget" | "photos">("attractions");
+  // Below the md breakpoint, only one of panel/map/itinerary is shown at a time.
+  const [mobilePane, setMobilePane] = useState<"panel" | "map" | "itinerary">("panel");
   const [selectedDay, setSelectedDay] = useState(1);
   const [dayLegs, setDayLegs] = useState<{ [day: number]: DayLegs }>({});
   const [dayPolylines, setDayPolylines] = useState<{
@@ -604,18 +612,21 @@ function TripInner({
         }}
       >
         <main
-          className="flex h-screen bg-[#F9F9F9]"
+          className="flex h-full bg-[#F9F9F9] overflow-hidden pb-16 md:pb-0"
           onPointerMove={(e) =>
             room.updatePresence({ cursor: { x: e.clientX, y: e.clientY } })
           }
           onPointerLeave={() => room.updatePresence({ cursor: null })}
         >
-          <CollaboratorPanel
-            itineraryId={itineraryId}
-            currentUserId={currentUserId}
-            currentUserRole={currentUserRole}
-            initialCollaborators={collaborators}
-          />
+          <div className="fixed top-3 left-16 z-40 flex items-center gap-3 max-w-[calc(100vw-5rem)] overflow-x-auto">
+            <CollaboratorPanel
+              itineraryId={itineraryId}
+              currentUserId={currentUserId}
+              currentUserRole={currentUserRole}
+              initialCollaborators={collaborators}
+            />
+            <TripTitleEditor itineraryId={itineraryId} initialTitle={title} />
+          </div>
 
           {/* Live cursors for other collaborators */}
           {others.map((other) =>
@@ -640,7 +651,11 @@ function TripInner({
             ) : null
           )}
 
-          <div className="p-8 w-1/3 flex flex-col shrink-0">
+          <div
+            className={`${
+              mobilePane === "panel" ? "flex" : "hidden"
+            } md:flex p-8 w-full md:w-1/3 flex-col shrink-0`}
+          >
             {/* Tab navigation */}
             <div className="flex mb-2 bg-white border rounded-full p-1 shadow-sm">
               {(["attractions", "details", "budget", "photos"] as const).map((view) => (
@@ -684,6 +699,11 @@ function TripInner({
                       cardRef={(el) => {
                         cardRefs.current[attraction.placeId] = el;
                       }}
+                      numDays={numDays}
+                      onAddToDay={(dayNumber) => {
+                        addAttractionToDay(dayNumber, attraction);
+                        setHasUnsavedChanges(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -708,10 +728,14 @@ function TripInner({
             )}
           </div>
 
-          <div className="flex-1 h-full relative">
+          <div
+            className={`${
+              mobilePane === "map" ? "block" : "hidden"
+            } md:block flex-1 h-full relative`}
+          >
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="absolute top-4 right-15 z-10 bg-red-500 text-white border rounded-full px-4 py-2 shadow font-semibold hover:bg-red-600 transition-colors"
+              className="hidden md:block absolute top-4 right-15 z-10 bg-red-500 text-white border rounded-full px-4 py-2 shadow font-semibold hover:bg-red-600 transition-colors"
             >
               {sidebarOpen ? "Hide Itinerary →" : "← Plan Itinerary"}
             </button>
@@ -759,7 +783,7 @@ function TripInner({
             startDate={startDate}
             endDate={endDate}
             itinerary={itinerary}
-            isOpen={sidebarOpen}
+            isOpen={sidebarOpen || mobilePane === "itinerary"}
             onRemove={handleRemove}
             onSave={handleSave}
             isSaving={isSaving}
@@ -771,6 +795,26 @@ function TripInner({
             onUpdateNote={(day, note) => updateDayNote({ day, note })}
             onClear={clearAll}
           />
+
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t flex items-center justify-around py-2 shadow-lg">
+            {(
+              [
+                { key: "panel", label: "Plan" },
+                { key: "map", label: "Map" },
+                { key: "itinerary", label: "Itinerary" },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setMobilePane(tab.key)}
+                className={`flex-1 py-2 text-sm font-semibold text-center transition-colors ${
+                  mobilePane === tab.key ? "text-red-500" : "text-gray-400"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </main>
 
         <DragOverlay>

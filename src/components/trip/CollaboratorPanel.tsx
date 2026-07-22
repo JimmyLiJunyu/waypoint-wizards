@@ -117,7 +117,7 @@ export default function CollaboratorPanel({
     <>
       <div
         ref={panelRef}
-        className="fixed top-3 left-16 z-40"
+        className="relative"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >

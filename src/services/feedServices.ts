@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function getUserPosts(userId: string) {
     return await prisma.post.findMany({
-        where: { ownerId: userId },
+        where: { ownerId: userId, published: true },
         include: {
             owner: { select: { id: true, name: true, imageUrl: true } },
             photo: true,
@@ -33,7 +33,7 @@ export async function getFeedPosts(currUserId: string) {
     const visibleUserIds = following.map((f) => f.followingId);
 
     return await prisma.post.findMany({
-        where: { ownerId: { in: visibleUserIds } },
+        where: { ownerId: { in: visibleUserIds }, published: true },
         include: {
             owner: { select: { id: true, name: true, imageUrl: true } },
             photo: true,

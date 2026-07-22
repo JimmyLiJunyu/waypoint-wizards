@@ -76,6 +76,7 @@ async function Trip({
   return (
     <TripClient
       itineraryId={tripId}
+      title={itinerary.title}
       destination={destination}
       startDate={startDate}
       endDate={endDate}

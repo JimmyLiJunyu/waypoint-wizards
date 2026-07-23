@@ -10,13 +10,15 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error && data.user) {
+    const email = data.user?.email
+
+    if (!error && data.user && email) {
       const existing = await prisma.user.findUnique({ where: { id: data.user.id } })
 
       if (!existing) {
         const metadata = data.user.user_metadata ?? {}
         const baseName: string =
-          metadata.full_name ?? metadata.name ?? data.user.email!.split("@")[0]
+          metadata.full_name || metadata.name || email.split("@")[0]
 
         let name = baseName
         let suffix = 0
@@ -28,7 +30,7 @@ export async function GET(request: Request) {
         await prisma.user.create({
           data: {
             id: data.user.id,
-            email: data.user.email!,
+            email,
             name,
             imageUrl: metadata.avatar_url ?? metadata.picture ?? null,
           },

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Trash2, Upload, Share2 } from "lucide-react";
+import { Trash2, Upload, Share2, Camera } from "lucide-react";
 
 type TripPhoto = {
   id: string;
@@ -151,21 +151,39 @@ function TripPhotos({
       <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-sm">Group Photos</h2>
-          <label className="cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
-            <Upload className="size-3.5" />
-            {uploadingGroup ? "Uploading..." : "Add"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={uploadingGroup}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleUploadGroup(file);
-                e.target.value = "";
-              }}
-            />
-          </label>
+          <div className="flex items-center gap-3">
+            <label className="md:hidden cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
+              <Camera className="size-3.5" />
+              {uploadingGroup ? "Uploading..." : "Camera"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                disabled={uploadingGroup}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadGroup(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <label className="cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
+              <Upload className="size-3.5" />
+              {uploadingGroup ? "Uploading..." : "Add"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingGroup}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadGroup(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {groupPhotos.map((photo) => (
@@ -193,21 +211,39 @@ function TripPhotos({
       <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-sm">My Photos</h2>
-          <label className="cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
-            <Upload className="size-3.5" />
-            {uploadingMine ? "Uploading..." : "Add"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={uploadingMine}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleUploadMine(file);
-                e.target.value = "";
-              }}
-            />
-          </label>
+          <div className="flex items-center gap-3">
+            <label className="md:hidden cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
+              <Camera className="size-3.5" />
+              {uploadingMine ? "Uploading..." : "Camera"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                disabled={uploadingMine}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadMine(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <label className="cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
+              <Upload className="size-3.5" />
+              {uploadingMine ? "Uploading..." : "Add"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingMine}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadMine(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {(post?.photo ?? []).map((photo) => (

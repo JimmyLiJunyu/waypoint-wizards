@@ -152,12 +152,14 @@ function TripDetailsPanel({
   selectedDay,
   onSelectDay,
   dayLegs,
+  dayNotes,
 }: {
   itinerary: { [day: number]: Attraction[] };
   days: Date[];
   selectedDay: number;
   onSelectDay: (day: number) => void;
   dayLegs: { [day: number]: DayLegs };
+  dayNotes: { [day: number]: string };
 }) {
   return (
     <div className="mt-4 flex flex-col gap-4 overflow-y-auto flex-1">
@@ -183,6 +185,12 @@ function TripDetailsPanel({
                 {date.toDateString()}
               </span>
             </div>
+
+            {dayNotes[dayNumber] && (
+              <p className="text-base text-gray-700 mb-3 leading-relaxed">
+                {dayNotes[dayNumber]}
+              </p>
+            )}
 
             {attractions.length === 0 ? (
               <p className="text-sm text-gray-400">

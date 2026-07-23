@@ -1,72 +1,77 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { getCurrUserId } from "@/lib/auth/session"
 import { createClient } from "@supabase/supabase-js"
+import { getCurrUserId } from "@/lib/auth/session"
+import { prisma } from "@/lib/prisma"
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function GET(request: NextRequest, {params}: {params: Promise<{itineraryId: string}>}) {
+type Params = { params: Promise<{ itineraryId: string }> }
 
-    const { itineraryId } = await params
-    const user = await getCurrUserId()
-
-    if (!user) return NextResponse.json({error: "Internal Server Error"}, {status: 401})
-
-    const isCollab = await prisma.collaborator.findUnique({
-        where: {userId_itineraryId: {
-            userId: user,
-            itineraryId: itineraryId
-        }}
+async function isCollaborator(userId: string, itineraryId: string) {
+    const record = await prisma.collaborator.findUnique({
+        where: { userId_itineraryId: { userId, itineraryId } }
     })
-    if (!isCollab) return NextResponse.json({error: "User is not a collaborator"}, {status: 403})
-
-    const photos = await prisma.tripPhoto.findMany({
-        where: {itineraryId: itineraryId},
-        select: {
-            id: true, url: true
-        },
-        
-    })
-
-    return NextResponse.json({photos})
+    return record !== null
 }
 
-export async function POST(request: NextRequest, {params}: {params: Promise<{itineraryId: string}>}) {
+export async function GET(request: NextRequest, { params }: Params) {
+    try {
+        const userId = await getCurrUserId()
+        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const { itineraryId } = await params
-    const user = await getCurrUserId()
-    if (!user) return NextResponse.json({error: "Internal Server Error"}, {status: 401})
+        const { itineraryId } = await params
 
-    const isCollab = await prisma.collaborator.findUnique({
-        where: {userId_itineraryId: {
-            userId: user,
-            itineraryId: itineraryId
-        }}
-    })
-    if (!isCollab) return NextResponse.json({error: "User is not a collaborator"}, {status: 403})
+        if (!(await isCollaborator(userId, itineraryId))) {
+            return NextResponse.json({ error: "Not a collaborator on this trip" }, { status: 403 })
+        }
 
-    const formData = await request.formData()
-    const file = formData.get('file') as File
-    if (!file) return NextResponse.json({error: "No File Uploaded"}, {status: 400})
-    
-    const id = crypto.randomUUID()
-    const { error } = await supabaseAdmin.storage
-                        .from("trip-photos")
-                        .upload(`trip/${itineraryId}/${id}`, file)
-    if (error) return NextResponse.json({error: "Error uploading trip photo"}, {status: 400})
-    
-    const { data: {publicUrl} } = supabaseAdmin.storage
-                                .from('trip-photos')
-                                .getPublicUrl(`trip/${itineraryId}/${id}`)
-    
-    const photo = await prisma.tripPhoto.create({data: {
-        id: id, url: publicUrl, itineraryId: itineraryId, uploadedBy: user
-    }})
+        const photos = await prisma.tripPhoto.findMany({
+            where: { itineraryId }
+        })
 
-    return NextResponse.json({photo}, {status: 201})
-    
+        return NextResponse.json({ photos })
+    } catch (error) {
+        return NextResponse.json({ error: String(error) }, { status: 400 })
+    }
 }
 
+export async function POST(request: NextRequest, { params }: Params) {
+    try {
+        const userId = await getCurrUserId()
+        if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+        const { itineraryId } = await params
+
+        if (!(await isCollaborator(userId, itineraryId))) {
+            return NextResponse.json({ error: "Not a collaborator on this trip" }, { status: 403 })
+        }
+
+        const formData = await request.formData()
+        const file = formData.get("file") as File
+        if (!file) return NextResponse.json({ error: "No file" }, { status: 400 })
+
+        const id = crypto.randomUUID()
+        const path = `trip/${itineraryId}/${id}`
+
+        const { error: uploadError } = await supabaseAdmin.storage
+            .from("trip-photos")
+            .upload(path, file)
+
+        if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 })
+
+        const { data: { publicUrl } } = supabaseAdmin.storage
+            .from("trip-photos")
+            .getPublicUrl(path)
+
+        const photo = await prisma.tripPhoto.create({
+            data: { id, url: publicUrl, itineraryId, uploadedBy: userId }
+        })
+
+        return NextResponse.json({ photo }, { status: 201 })
+    } catch (error) {
+        return NextResponse.json({ error: String(error) }, { status: 400 })
+    }
+}

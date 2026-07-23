@@ -1,5 +1,3 @@
-// server side client for api routes and server components
-
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
@@ -12,7 +10,9 @@ export async function createClient() {
             cookies: {
                 getAll: () => cookieStore.getAll(),
                 setAll: (cookies) => {
-                    cookies.forEach(({name , value, options}) => cookieStore.set(name, value, options))
+                    try {
+                        cookies.forEach(({name , value, options}) => cookieStore.set(name, value, options))
+                    } catch {}
                 }
             }
         }

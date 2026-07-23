@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { itineraryId: string } }
+  { params }: { params: Promise<{ itineraryId: string }>  }
 ) {
   const { itineraryId } = await params;
   const body = await req.json();
@@ -21,9 +21,8 @@ export async function POST(
       photoRef?: string;
     }[];
   } = body.itinerary;
-  console.log('itineraryId:', itineraryId);
-  console.log('body:', JSON.stringify(body));
-  console.log('itinerary:', JSON.stringify(itinerary));
+
+  const dayNotes: { [day: number]: string } = body.dayNotes ?? {};
 
   const items = Object.entries(itinerary).flatMap(([day, attractions]) =>
     attractions.map((a, position) => ({
@@ -42,12 +41,19 @@ export async function POST(
     }))
   );
 
-  // console.log("items to save:", JSON.stringify(items, null, 2)); 
+  const noteItems = Object.entries(dayNotes)
+    .filter(([, note]) => note.trim())
+    .map(([day, note]) => ({
+      itineraryId,
+      dayNumber: parseInt(day),
+      note,
+    }));
 
-  // delete and replace
   await prisma.$transaction([
     prisma.itineraryItem.deleteMany({ where: { itineraryId } }),
     prisma.itineraryItem.createMany({ data: items }),
+    prisma.dayNote.deleteMany({ where: { itineraryId } }),
+    ...(noteItems.length > 0 ? [prisma.dayNote.createMany({ data: noteItems })] : []),
   ]);
 
   return NextResponse.json({ success: true });

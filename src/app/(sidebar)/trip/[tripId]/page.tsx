@@ -25,6 +25,7 @@ async function Trip({
     where: { id: tripId },
     include: {
       itineraryItems: { orderBy: [{ dayNumber: "asc" }, { position: "asc" }] },
+      dayNotes: true,
     },
   });
 
@@ -67,13 +68,20 @@ async function Trip({
     });
   }
 
+  const savedDayNotes: { [day: number]: string } = {};
+  for (const dn of itinerary.dayNotes) {
+    if (dn.note) savedDayNotes[dn.dayNumber] = dn.note;
+  }
+
   return (
     <TripClient
       itineraryId={tripId}
+      title={itinerary.title}
       destination={destination}
       startDate={startDate}
       endDate={endDate}
       savedItinerary={savedItinerary}
+      savedDayNotes={savedDayNotes}
       currentUserId={currUserId}
       currentUserRole={currUserCollab.role}
       collaborators={collaborators}

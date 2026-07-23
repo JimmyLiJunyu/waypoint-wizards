@@ -10,5 +10,11 @@ export function useFollowStatus(id: string, initialStatus: string) {
         if (res.ok) setStatus("PENDING");
     }
 
-    return { status, setStatus, follow };
+    // Also cancels an outgoing PENDING request — both are just deleting the same Follow row.
+    async function unfollow() {
+        const res = await fetch(`/api/users/${id}/unfollow`, { method: "DELETE" });
+        if (res.ok) setStatus("NONE");
+    }
+
+    return { status, setStatus, follow, unfollow };
 }

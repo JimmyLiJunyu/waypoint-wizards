@@ -24,6 +24,7 @@ model Post {
   itineraryId String
   ownerId String
   description String?
+  published Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -75,6 +76,38 @@ model User {
   following  Follow[]       @relation("UserFollowing")
   expenses       Expense[]
   expenseSplits  ExpenseSplit[]
+  conversationsAsA Conversation[] @relation("ConversationsAsA")
+  conversationsAsB Conversation[] @relation("ConversationsAsB")
+  messages         Message[]
+}
+
+// userAId is always the lexicographically smaller of the two participant ids,
+// enforced in code (see messagingServices.ts), so @@unique catches both orderings.
+model Conversation {
+  id        String   @id @default(uuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userA User @relation("ConversationsAsA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("ConversationsAsB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  @@unique([userAId, userBId])
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  createdAt      DateTime  @default(now())
+  readAt         DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }
 
 model Destination {
@@ -97,9 +130,20 @@ model Itinerary {
   collaborators  Collaborator[]
   destinations   Destination[]
   itineraryItems ItineraryItem[]
-  posts Post[]
-  tripPhotos TripPhoto[]
+  posts          Post[]
+  tripPhotos     TripPhoto[]
   expenses       Expense[]
+  dayNotes       DayNote[]
+}
+
+model DayNote {
+  id          Int       @id @default(autoincrement())
+  itineraryId String
+  dayNumber   Int
+  note        String    @default("")
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@unique([itineraryId, dayNumber])
 }
 
 model Collaborator {

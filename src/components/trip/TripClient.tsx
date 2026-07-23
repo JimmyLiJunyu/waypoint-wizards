@@ -23,6 +23,8 @@ import { DayLegs, ModeLeg } from "@/types/directions";
 import { ColouredPolylineSegment } from "../map/Map";
 import CollaboratorPanel from "./CollaboratorPanel";
 import BudgetPanel from "./BudgetPanel";
+import TripPhotos from "./TripPhotos";
+import TripTitleEditor from "./TripTitleEditor";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import { RoomProvider, useStorage, useMutation, useOthers, useRoom } from "@/lib/liveblocks";
 import { AttractionEntry } from "@/lib/liveblocks";
@@ -52,19 +54,23 @@ type CollaboratorRecord = {
 
 function TripClient({
   itineraryId,
+  title,
   destination,
   startDate,
   endDate,
   savedItinerary,
+  savedDayNotes = {},
   currentUserId,
   currentUserRole,
   collaborators,
 }: {
   itineraryId: string;
+  title: string;
   destination: string;
   startDate: string;
   endDate: string;
   savedItinerary: { [day: number]: Attraction[] };
+  savedDayNotes?: { [day: number]: string };
   currentUserId: string;
   currentUserRole: string;
   collaborators: CollaboratorRecord[];
@@ -95,10 +101,14 @@ function TripClient({
             ),
           ])
         ),
+        dayNotes: new LiveMap(
+          Object.entries(savedDayNotes).map(([day, note]) => [day, note])
+        ),
       })}
     >
       <TripInner
         itineraryId={itineraryId}
+        title={title}
         destination={destination}
         startDate={startDate}
         endDate={endDate}
@@ -112,6 +122,7 @@ function TripClient({
 
 function TripInner({
   itineraryId,
+  title,
   destination,
   startDate,
   endDate,
@@ -120,6 +131,7 @@ function TripInner({
   collaborators,
 }: {
   itineraryId: string;
+  title: string;
   destination: string;
   startDate: string;
   endDate: string;
@@ -145,6 +157,16 @@ function TripInner({
     return result;
   }) ?? {};
 
+  const dayNotes = useStorage((root) => {
+    if (!root.dayNotes) return {};
+    const result: { [day: number]: string } = {};
+    const entries = Object.entries(root.dayNotes as unknown as Record<string, string>);
+    entries.forEach(([dayStr, note]) => {
+      if (note) result[parseInt(dayStr)] = note;
+    });
+    return result;
+  }) ?? {};
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null);
   const sensors = useSensors(
@@ -154,9 +176,13 @@ function TripInner({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [skippedPlaces, setSkippedPlaces] = useState<string[]>([]);
 
   // Trip details / routing state (from HEAD)
-  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details" | "budget">("attractions");
+  const [leftPanelView, setLeftPanelView] = useState<"attractions" | "details" | "budget" | "photos">("attractions");
+  // Below the md breakpoint, only one of panel/map/itinerary is shown at a time.
+  const [mobilePane, setMobilePane] = useState<"panel" | "map" | "itinerary">("panel");
   const [selectedDay, setSelectedDay] = useState(1);
   const [dayLegs, setDayLegs] = useState<{ [day: number]: DayLegs }>({});
   const [dayPolylines, setDayPolylines] = useState<{
@@ -263,6 +289,84 @@ function TripInner({
     },
     []
   );
+
+  const updateDayNote = useMutation(
+    ({ storage }, { day, note }: { day: number; note: string }) => {
+      const notes = storage.get("dayNotes");
+      if (!notes) return;
+      notes.set(String(day), note);
+    },
+    []
+  );
+
+  const clearAll = useMutation(({ storage }) => {
+    const lb = storage.get("itinerary");
+    const itineraryKeys = [...lb.keys()];
+    itineraryKeys.forEach((key) => lb.set(key, new LiveList([])));
+    const notes = storage.get("dayNotes");
+    if (notes) {
+      const noteKeys = [...notes.keys()];
+      noteKeys.forEach((key) => notes.delete(key));
+    }
+  }, []);
+
+  const applyAiItinerary = useMutation(
+    (
+      { storage },
+      {
+        days,
+        mode,
+      }: {
+        days: { day: number; attractions: Omit<AttractionEntry, "instanceId">[]; description?: string }[];
+        mode: "scratch" | "ontop";
+      }
+    ) => {
+      const lb = storage.get("itinerary");
+      const notes = storage.get("dayNotes");
+      days.forEach(({ day, attractions, description }) => {
+        const key = String(day);
+        const existing = lb.get(key);
+        if (mode === "ontop" && existing && existing.length > 0) return;
+        lb.set(
+          key,
+          new LiveList(
+            attractions.map(
+              (a) =>
+                new LiveObject({
+                  ...a,
+                  instanceId: `${a.placeId}-${Date.now()}-${Math.random()}`,
+                })
+            )
+          )
+        );
+        if (description && notes) {
+          const existingNote = notes.get(key) ?? "";
+          if (mode === "scratch" || !existingNote.trim()) {
+            notes.set(key, description);
+          }
+        }
+      });
+    },
+    []
+  );
+
+  const handleAiGenerate = async (mode: "scratch" | "ontop") => {
+    setIsGenerating(true);
+    setSkippedPlaces([]);
+    try {
+      const res = await fetch(`/api/itinerary/${itineraryId}/ai-generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destination, numDays, lat: center.lat, lng: center.lng }),
+      });
+      const data = await res.json();
+      applyAiItinerary({ days: data.days, mode });
+      setSkippedPlaces(data.skipped ?? []);
+      setHasUnsavedChanges(true);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     const geocode = async () => {
@@ -403,7 +507,7 @@ function TripInner({
       await fetch(`/api/itinerary/${itineraryId}/save`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itinerary }),
+        body: JSON.stringify({ itinerary, dayNotes }),
       });
       setHasUnsavedChanges(false);
     } finally {
@@ -508,18 +612,21 @@ function TripInner({
         }}
       >
         <main
-          className="flex h-screen bg-[#F9F9F9]"
+          className="flex h-full bg-[#F9F9F9] overflow-hidden pb-16 md:pb-0"
           onPointerMove={(e) =>
             room.updatePresence({ cursor: { x: e.clientX, y: e.clientY } })
           }
           onPointerLeave={() => room.updatePresence({ cursor: null })}
         >
-          <CollaboratorPanel
-            itineraryId={itineraryId}
-            currentUserId={currentUserId}
-            currentUserRole={currentUserRole}
-            initialCollaborators={collaborators}
-          />
+          <div className="fixed top-3 left-16 z-40 flex items-center gap-3 max-w-[calc(100vw-5rem)] overflow-x-auto">
+            <CollaboratorPanel
+              itineraryId={itineraryId}
+              currentUserId={currentUserId}
+              currentUserRole={currentUserRole}
+              initialCollaborators={collaborators}
+            />
+            <TripTitleEditor itineraryId={itineraryId} initialTitle={title} />
+          </div>
 
           {/* Live cursors for other collaborators */}
           {others.map((other) =>
@@ -544,10 +651,14 @@ function TripInner({
             ) : null
           )}
 
-          <div className="p-8 w-1/3 flex flex-col shrink-0">
+          <div
+            className={`${
+              mobilePane === "panel" ? "flex" : "hidden"
+            } md:flex p-8 w-full md:w-1/3 flex-col shrink-0`}
+          >
             {/* Tab navigation */}
             <div className="flex mb-2 bg-white border rounded-full p-1 shadow-sm">
-              {(["attractions", "details", "budget"] as const).map((view) => (
+              {(["attractions", "details", "budget", "photos"] as const).map((view) => (
                 <button
                   key={view}
                   onClick={() => setLeftPanelView(view)}
@@ -557,7 +668,7 @@ function TripInner({
                       : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  {view === "attractions" ? "Explore" : view === "details" ? "Details" : "Budget"}
+                  {view === "attractions" ? "Explore" : view === "details" ? "Details" : view === "budget" ? "Budget" : "Photos"}
                 </button>
               ))}
             </div>
@@ -588,6 +699,11 @@ function TripInner({
                       cardRef={(el) => {
                         cardRefs.current[attraction.placeId] = el;
                       }}
+                      numDays={numDays}
+                      onAddToDay={(dayNumber) => {
+                        addAttractionToDay(dayNumber, attraction);
+                        setHasUnsavedChanges(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -599,20 +715,27 @@ function TripInner({
                 selectedDay={selectedDay}
                 onSelectDay={setSelectedDay}
                 dayLegs={dayLegs}
+                dayNotes={dayNotes}
               />
-            ) : (
+            ) : leftPanelView === "budget" ? (
               <BudgetPanel
                 itineraryId={itineraryId}
                 collaborators={collaborators}
                 currentUserId={currentUserId}
               />
+            ) : (
+              <TripPhotos itineraryId={itineraryId} currentUserId={currentUserId} />
             )}
           </div>
 
-          <div className="flex-1 h-full relative">
+          <div
+            className={`${
+              mobilePane === "map" ? "block" : "hidden"
+            } md:block flex-1 h-full relative`}
+          >
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="absolute top-4 right-15 z-10 bg-red-500 text-white border rounded-full px-4 py-2 shadow font-semibold hover:bg-red-600 transition-colors"
+              className="hidden md:block absolute top-4 right-15 z-10 bg-red-500 text-white border rounded-full px-4 py-2 shadow font-semibold hover:bg-red-600 transition-colors"
             >
               {sidebarOpen ? "Hide Itinerary →" : "← Plan Itinerary"}
             </button>
@@ -660,12 +783,38 @@ function TripInner({
             startDate={startDate}
             endDate={endDate}
             itinerary={itinerary}
-            isOpen={sidebarOpen}
+            isOpen={sidebarOpen || mobilePane === "itinerary"}
             onRemove={handleRemove}
             onSave={handleSave}
             isSaving={isSaving}
             hasUnsavedChanges={hasUnsavedChanges}
+            onAiGenerate={handleAiGenerate}
+            isGenerating={isGenerating}
+            skippedPlaces={skippedPlaces}
+            dayNotes={dayNotes}
+            onUpdateNote={(day, note) => updateDayNote({ day, note })}
+            onClear={clearAll}
           />
+
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t flex items-center justify-around py-2 shadow-lg">
+            {(
+              [
+                { key: "panel", label: "Plan" },
+                { key: "map", label: "Map" },
+                { key: "itinerary", label: "Itinerary" },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setMobilePane(tab.key)}
+                className={`flex-1 py-2 text-sm font-semibold text-center transition-colors ${
+                  mobilePane === tab.key ? "text-red-500" : "text-gray-400"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </main>
 
         <DragOverlay>

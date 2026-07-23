@@ -9,6 +9,10 @@ export async function POST(request: Request) {
     try {
         const { destination, startDate, endDate } = await request.json();
 
+        if (new Date(endDate) < new Date(startDate)) {
+            return NextResponse.json({ error: "End date must be after the start date." }, { status: 400 });
+        }
+
         const existingCount = await prisma.itinerary.count({
             where: {
                 collaborators: { some: { userId } }

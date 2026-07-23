@@ -44,7 +44,7 @@ function SignUpForm() {
   };
 
   return (
-    <div className="flex flex-col flex-1 items-center justify center">
+    <div className="flex flex-col flex-1 items-center justify-center">
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 p-8 max-w-sm mx-auto"

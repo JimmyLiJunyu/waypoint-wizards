@@ -25,6 +25,7 @@ import CollaboratorPanel from "./CollaboratorPanel";
 import BudgetPanel from "./BudgetPanel";
 import TripPhotos from "./TripPhotos";
 import TripTitleEditor from "./TripTitleEditor";
+import { Compass, Map as MapIcon, ListOrdered } from "lucide-react";
 import { LiveList, LiveMap, LiveObject } from "@liveblocks/client";
 import { RoomProvider, useStorage, useMutation, useOthers, useRoom } from "@/lib/liveblocks";
 import { AttractionEntry } from "@/lib/liveblocks";
@@ -654,7 +655,7 @@ function TripInner({
           <div
             className={`${
               mobilePane === "panel" ? "flex" : "hidden"
-            } md:flex p-8 w-full md:w-1/3 flex-col shrink-0`}
+            } md:flex p-4 md:p-8 w-full md:w-1/3 flex-col shrink-0`}
           >
             {/* Tab navigation */}
             <div className="flex mb-2 bg-white border rounded-full p-1 shadow-sm">
@@ -668,15 +669,20 @@ function TripInner({
                       : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  {view === "attractions" ? "Explore" : view === "details" ? "Details" : view === "budget" ? "Budget" : "Photos"}
+                  <span className="hidden sm:inline">
+                    {view === "attractions" ? "Explore" : view === "details" ? "Details" : view === "budget" ? "Budget" : "Photos"}
+                  </span>
+                  <span className="sm:hidden">
+                    {view === "attractions" ? "Explore" : view === "details" ? "Plan" : view === "budget" ? "$" : "📷"}
+                  </span>
                 </button>
               ))}
             </div>
 
-            <h1 className="text-4xl font-bold">
-              The Next Station is {destination}{" "}
+            <h1 className="text-2xl md:text-4xl font-bold">
+              The Next Station is {destination}
             </h1>
-            <p className="text-gray-500 mt-2">
+            <p className="text-gray-500 mt-1 text-sm md:text-base">
               {start.toDateString()} → {end.toDateString()}
             </p>
 
@@ -796,25 +802,33 @@ function TripInner({
             onClear={clearAll}
           />
 
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t flex items-center justify-around py-2 shadow-lg">
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg flex items-stretch">
             {(
               [
-                { key: "panel", label: "Plan" },
-                { key: "map", label: "Map" },
-                { key: "itinerary", label: "Itinerary" },
+                { key: "panel",     label: "Explore",   icon: Compass },
+                { key: "map",       label: "Map",       icon: MapIcon },
+                { key: "itinerary", label: "Itinerary", icon: ListOrdered },
               ] as const
-            ).map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setMobilePane(tab.key)}
-                className={`flex-1 py-2 text-sm font-semibold text-center transition-colors ${
-                  mobilePane === tab.key ? "text-red-500" : "text-gray-400"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+            ).map((tab) => {
+              const Icon = tab.icon;
+              const active = mobilePane === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setMobilePane(tab.key)}
+                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors relative ${
+                    active ? "text-red-500" : "text-gray-400"
+                  }`}
+                >
+                  {active && (
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-red-500 rounded-full" />
+                  )}
+                  <Icon size={20} strokeWidth={active ? 2.2 : 1.8} />
+                  <span className="text-[10px] font-semibold">{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
         </main>
 
         <DragOverlay>

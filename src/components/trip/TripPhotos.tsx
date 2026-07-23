@@ -195,7 +195,7 @@ function TripPhotos({
               {photo.uploadedBy === currentUserId && (
                 <button
                   onClick={() => handleDeleteGroup(photo.id)}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                 >
                   <Trash2 className="size-3" />
                 </button>
@@ -254,7 +254,7 @@ function TripPhotos({
               <Image src={photo.url} alt="My photo" fill className="object-cover" />
               <button
                 onClick={() => handleDeleteMine(photo.id)}
-                className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white md:opacity-0 md:group-hover:opacity-100 transition-opacity"
               >
                 <Trash2 className="size-3" />
               </button>

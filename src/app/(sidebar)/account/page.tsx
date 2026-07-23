@@ -151,7 +151,7 @@ function AccountPage() {
               accept="image/*"
               onChange={handleImageUpload}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:bg-slate-900 file:text-white hover:file:bg-slate-700 cursor-pointer"/>
-              {image && <p className="text-xstext-green-600 mt-1">Image ready to save</p>}
+              {image && <p className="text-xs text-green-600 mt-1">Image ready to save</p>}
           </div>
 
           <button

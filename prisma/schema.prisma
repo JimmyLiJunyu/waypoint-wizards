@@ -19,6 +19,48 @@ model Follow {
   @@id([followerId, followingId])
 }
 
+model Post {
+  id String @id @default(uuid())
+  itineraryId String
+  ownerId String
+  description String?
+  published Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  itinerary Itinerary @relation (fields: [itineraryId], references: [id], onDelete: Cascade)
+  owner User @relation("OwnerId", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  postLike PostLike[]
+  photo Photo[]
+
+  @@unique([ownerId, itineraryId])
+}
+
+model PostLike {
+  userId String
+  userLiked User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId String
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@id([userId, postId])
+}
+
+model TripPhoto {
+  id String @id @default(uuid())
+  url String
+  itineraryId String
+  itinerary Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  uploadedBy String
+  user User @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+}
+
+model Photo {
+  id String @id @default(uuid())
+  url String
+  postId String
+  post Post @relation(fields: [postId], references:[id], onDelete: Cascade)
+}
+
 model User {
   id         String         @id @default(uuid())
   email      String         @unique
@@ -26,10 +68,46 @@ model User {
   imageUrl   String?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
-  password   String
   itinearies Collaborator[]
+  posts      Post[]         @relation("OwnerId")
+  postLike   PostLike[]
+  tripPhoto  TripPhoto[]
   followers  Follow[]       @relation("UserFollowers")
   following  Follow[]       @relation("UserFollowing")
+  expenses       Expense[]
+  expenseSplits  ExpenseSplit[]
+  conversationsAsA Conversation[] @relation("ConversationsAsA")
+  conversationsAsB Conversation[] @relation("ConversationsAsB")
+  messages         Message[]
+}
+
+// userAId is always the lexicographically smaller of the two participant ids,
+// enforced in code (see messagingServices.ts), so @@unique catches both orderings.
+model Conversation {
+  id        String   @id @default(uuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userA User @relation("ConversationsAsA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("ConversationsAsB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  @@unique([userAId, userBId])
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  createdAt      DateTime  @default(now())
+  readAt         DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }
 
 model Destination {
@@ -52,6 +130,20 @@ model Itinerary {
   collaborators  Collaborator[]
   destinations   Destination[]
   itineraryItems ItineraryItem[]
+  posts          Post[]
+  tripPhotos     TripPhoto[]
+  expenses       Expense[]
+  dayNotes       DayNote[]
+}
+
+model DayNote {
+  id          Int       @id @default(autoincrement())
+  itineraryId String
+  dayNumber   Int
+  note        String    @default("")
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@unique([itineraryId, dayNumber])
 }
 
 model Collaborator {
@@ -60,7 +152,7 @@ model Collaborator {
   userId      String
   itineraryId String
   itinerary   Itinerary @relation(fields: [itineraryId], references: [id])
-  user        User      @relation(fields: [userId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itineraryId])
 }
@@ -77,8 +169,32 @@ model ItineraryItem {
   rating      Float
   reviews     Int
   instanceId  String
+  photoRef    String?
   itineraryId String
   itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id          Int            @id @default(autoincrement())
+  itineraryId String
+  payerId     String
+  description String
+  amount      Float
+  currency    String         @default("SGD")
+  createdAt   DateTime       @default(now())
+  itinerary   Itinerary      @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  payer       User           @relation(fields: [payerId], references: [id])
+  splits      ExpenseSplit[]
+}
+
+model ExpenseSplit {
+  id        Int     @id @default(autoincrement())
+  expenseId Int
+  userId    String
+  share     Float
+  settled   Boolean @default(false)
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id])
 }
 
 enum FollowStatus {

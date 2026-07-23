@@ -15,6 +15,14 @@ function TripForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
+
+  const handleStartDateSelect = (date: Date | undefined) => {
+    setStartDate(date);
+    if (date && endDate && endDate < date) {
+      setEndDate(undefined);
+    }
+  };
+
 // means cannot use enter to submit, might need debug
   const handleSubmit = async (e?: React.MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
@@ -26,6 +34,9 @@ function TripForm() {
     try {
       if (!destination || !startDate || !endDate) {
         throw new Error("Invalid fields!");
+      }
+      if (endDate < startDate) {
+        throw new Error("End date must be after the start date.");
       }
       const response = await fetch("/api/new-trip", {
         method: "POST",
@@ -86,13 +97,14 @@ function TripForm() {
           placeholder="Start Date"
           className="flex-1"
           date={startDate}
-          onSelect={setStartDate}
+          onSelect={handleStartDateSelect}
         />
         <DatePicker
           placeholder="End Date"
           className="flex-1"
           date={endDate}
           onSelect={setEndDate}
+          disabled={startDate ? { before: startDate } : undefined}
         />
       </div>
       <button

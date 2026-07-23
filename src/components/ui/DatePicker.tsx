@@ -1,4 +1,5 @@
 "use client";
+import type { ComponentProps } from "react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -14,11 +15,13 @@ export default function DatePicker({
   className,
   date,
   onSelect,
+  disabled,
 }: {
   placeholder: string;
   className?: string;
   date?: Date;
   onSelect: (date: Date | undefined) => void;
+  disabled?: ComponentProps<typeof Calendar>["disabled"];
 }) {
   return (
     <Popover>
@@ -40,7 +43,7 @@ export default function DatePicker({
         )}
       </PopoverTrigger>
       <PopoverContent>
-        <Calendar mode="single" selected={date} onSelect={onSelect} />
+        <Calendar mode="single" selected={date} onSelect={onSelect} disabled={disabled} />
       </PopoverContent>
     </Popover>
   );

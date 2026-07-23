@@ -78,7 +78,7 @@ function AccountPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-start justify-center pt-12 px-4 font-sans text-slate-900">
+    <main className="h-full overflow-y-auto bg-gray-50 flex items-start justify-center pt-12 px-4 font-sans text-slate-900">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
         <div className="bg-red-500 p-8 flex flex-col items-center border-b border-slate-100">
           <div className="relative size-24 rounded-full overflow-hidden bg-white border-4 border-white shadow-md mb-4">

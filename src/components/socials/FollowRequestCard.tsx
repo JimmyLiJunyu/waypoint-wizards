@@ -5,6 +5,7 @@ import { useState } from "react";
 import { User } from "lucide-react";
 import Image from "next/image";
 import { useFollowStatus } from "@/hooks/useFollowStatus";
+import FollowStatusButton from "./FollowStatusButton";
 
 interface FollowerCardProps {
   id: string,
@@ -19,7 +20,13 @@ export default function FollowRequestCard({ id, name, imageUrl, followStatus, on
   const router = useRouter();
   const [status, setStatus] = useState(followStatus);
   const [followedBack, setFollowedBack] = useState(false);
-  const { status: followBackStatus, follow: followBack } = useFollowStatus(id, "NONE");
+  const { status: followBackStatus, follow: followBack, unfollow: unfollowBack } = useFollowStatus(id, "NONE");
+  const effectiveFollowBackStatus = followedBack ? "ACCEPTED" : followBackStatus;
+
+  async function handleUnfollowBack() {
+    await unfollowBack();
+    setFollowedBack(false);
+  }
 
   async function handleAccept(e: React.MouseEvent) {
     e.stopPropagation();
@@ -71,11 +78,13 @@ export default function FollowRequestCard({ id, name, imageUrl, followStatus, on
       )}
 
       {status === "ACCEPTED" && (
-        followedBack || followBackStatus === "PENDING"
-          ? <span className="text-sm text-gray-400">{followedBack ? "Following" : "Requested"}</span>
-          : <button onClick={(e) => { e.stopPropagation(); followBack(); }} className="text-sm px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600">
-              Follow Back
-            </button>
+        <FollowStatusButton
+          status={effectiveFollowBackStatus}
+          name={name}
+          onFollow={followBack}
+          onUnfollow={handleUnfollowBack}
+          noneLabel="Follow Back"
+        />
       )}
     </div>
   );

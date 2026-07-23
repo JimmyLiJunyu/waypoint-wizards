@@ -1,33 +1,24 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcrypt";
-import { createUser } from '@/services/userServices';
+import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
+import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
-  try {
-    const { email, name, password } = await request.json();
-
-    if (!email || !name || !password) {
-      return NextResponse.json({ error: "Missing email or password!" });
-    }
-
-    await createUser({ email, name, password });
-
+  const { email, name, password } = await request.json()
+  if (!email || !name || !password) {
     return NextResponse.json({
-      success: true,
-      message: "User created successfully.",
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-    console.error("Signup Error details:", errorMessage);
-
-    if (errorMessage === "Email already registered!") {
-      return NextResponse.json({ error: errorMessage }, {status: 400});
-    }
-    
-    return NextResponse.json(
-      { error: errorMessage},
-      { status: 500 },
-    );
+      error: "Missing Fields"
+    }, {
+      status: 400
+    })
   }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.auth.signUp( {email, password} )
+  if (error) return NextResponse.json({error: error.message}, {status: 400})
+  
+  await prisma.user.create({
+    data: {id: data.user!.id, email, name}
+  })
+
+  return NextResponse.json({sucess: true})
 }

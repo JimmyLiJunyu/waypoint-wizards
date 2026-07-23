@@ -10,6 +10,7 @@ export type AttractionEntry = {
     lng: number;
     rating: number;
     reviews: number;
+    photoRef?: string;
 }
 
 export type Presence = {
@@ -20,6 +21,7 @@ export type Presence = {
 
 export type Storage = {
     itinerary: LiveMap<string, LiveList<LiveObject<AttractionEntry>>>;
+    dayNotes: LiveMap<string, string>;
 }
 
 const client = createClient({

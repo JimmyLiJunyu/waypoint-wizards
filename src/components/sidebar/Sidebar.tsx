@@ -73,12 +73,16 @@ export function Sidebar() {
         <div className="flex items-center gap-3 py-4 border-y">
             {isLoading ? (<div>Loading user...</div>) : (
                 <>
-                    <div className="relative size-10 shrink-0 rounded-full overflow-hidden bg-muted border-border flex items-center justify-center">
+                    <Link
+                        href={user ? `/users/${user.id}` : "#"}
+                        onClick={closeSideBar}
+                        className="relative size-10 shrink-0 rounded-full overflow-hidden bg-muted border-border flex items-center justify-center hover:opacity-80 transition-opacity"
+                    >
                         {user?.imageUrl ? (
                             <Image src={user.imageUrl} alt="Avatar" fill className="object-cover object-center"/>
                         ): <User className="size-5"/> }
 
-                    </div>
+                    </Link>
                     <div>
                         <p className="text-lg text-gray-300 font-bold">{user?.name || "Explorer"}</p>
                         <p className="text-sm text-gray-300 font-medium">{user?.email}</p>
@@ -116,6 +120,20 @@ export function Sidebar() {
             className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
           >
             Socials
+          </Link>
+          <Link
+            href="/feed"
+            onClick={closeSideBar}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
+          >
+            Feed
+          </Link>
+          <Link
+            href="/messages"
+            onClick={closeSideBar}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm  font-bold text-gray-300 hover:bg-muted hover:underline hover:text-foreground transition-colors"
+          >
+            Messages
           </Link>
           <Link
             href="/ai-planner"

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { X } from "lucide-react";
 import FollowerSearchCard from './FollowerSearchCard'
 
 interface User {
@@ -14,6 +15,7 @@ export default function UserSearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<User[]>([]);
   const [showPopup, setShowPopup] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!query.trim()) return;
@@ -30,23 +32,47 @@ export default function UserSearch() {
     });
   }, [query]);
 
+  function clearQuery() {
+    setQuery("");
+    setResults([]);
+    setShowPopup(false);
+  }
+
   return (
     <div className="relative">
       <div className="flex gap-2">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => {
-            const val = e.target.value;
-            setQuery(val);
-            if (!val.trim()) {
-              setResults([]);
-              setShowPopup(false);
-            }
-          }}
-          placeholder="Search users..."
-          className="border rounded px-3 py-2 w-full"
-        />
+        <div className="relative flex-1">
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => {
+              const val = e.target.value;
+              setQuery(val);
+              if (!val.trim()) {
+                setResults([]);
+                setShowPopup(false);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                clearQuery();
+                inputRef.current?.blur();
+              }
+            }}
+            placeholder="Search users..."
+            className="border rounded px-3 py-2 w-full pr-8"
+          />
+          {query && (
+            <button
+              onClick={clearQuery}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="size-4" />
+            </button>
+          )}
+        </div>
         <button className="bg-blue-500 text-white px-4 py-2 rounded">
           Search
         </button>

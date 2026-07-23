@@ -2,7 +2,7 @@ import TripClient from "@/components/trip/TripClient";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { Attraction } from "@/types/attractions";
-import { getCurrUserId } from "@/lib/auth/tokens"
+import { getCurrUserId } from "@/lib/auth/session"
 
 async function Trip({
   params,
@@ -25,6 +25,7 @@ async function Trip({
     where: { id: tripId },
     include: {
       itineraryItems: { orderBy: [{ dayNumber: "asc" }, { position: "asc" }] },
+      dayNotes: true,
     },
   });
 
@@ -63,16 +64,24 @@ async function Trip({
       lng: item.lng,
       rating: item.rating,
       reviews: item.reviews,
+      photoRef: item.photoRef ?? undefined,
     });
+  }
+
+  const savedDayNotes: { [day: number]: string } = {};
+  for (const dn of itinerary.dayNotes) {
+    if (dn.note) savedDayNotes[dn.dayNumber] = dn.note;
   }
 
   return (
     <TripClient
       itineraryId={tripId}
+      title={itinerary.title}
       destination={destination}
       startDate={startDate}
       endDate={endDate}
       savedItinerary={savedItinerary}
+      savedDayNotes={savedDayNotes}
       currentUserId={currUserId}
       currentUserRole={currUserCollab.role}
       collaborators={collaborators}

@@ -8,9 +8,9 @@ function Dashboard() {
 
 
     return (
-        <main className='min-h-screen bg-[#F9F9F9] p-8'>
-            <div className='max-w-4xl mx-auto'>
-                <div className='flex items-center justify-between mb-8'>
+        <main className='h-full bg-[#F9F9F9] p-8 flex flex-col overflow-hidden'>
+            <div className='max-w-4xl mx-auto w-full flex flex-col flex-1 min-h-0'>
+                <div className='flex items-center justify-between mb-8 shrink-0'>
                     <div>
                         <h1 className="text-4xl font-bold">My Trips</h1>
                         <p className="text-gray-500 mt-1">Here are your trips</p>
@@ -21,8 +21,9 @@ function Dashboard() {
                         </button>
                     </Link>
                 </div>
-                <TripTable/>
-                
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                    <TripTable/>
+                </div>
             </div>
         </main>
     )

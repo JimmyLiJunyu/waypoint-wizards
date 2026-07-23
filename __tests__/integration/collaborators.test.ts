@@ -1,4 +1,4 @@
-jest.mock("@/lib/auth/tokens", () => ({
+jest.mock("@/lib/auth/session", () => ({
   getCurrUserId: jest.fn(),
 }));
 
@@ -16,7 +16,7 @@ jest.mock("@/lib/prisma", () => ({
 
 import { NextRequest } from "next/server";
 import { POST } from "@/app/api/itinerary/[itineraryId]/collaborators/route";
-import { getCurrUserId } from "@/lib/auth/tokens";
+import { getCurrUserId } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
 const mockGetCurrUserId = getCurrUserId as jest.Mock;

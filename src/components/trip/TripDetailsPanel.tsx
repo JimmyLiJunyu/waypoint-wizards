@@ -2,30 +2,38 @@
 import { Attraction } from "@/types/attractions";
 import { getDayColour } from "@/lib/dayColours";
 import { DayLegs, ModeLeg, TransitSegment } from "@/types/directions";
+import {
+  Footprints,
+  Car,
+  Bus,
+  Train,
+  TramFront,
+  Ship,
+  CableCar,
+} from "lucide-react";
+import React from "react";
 
-const VEHICLE_ICONS: { [key: string]: string } = {
-  BUS: "🚌",
-  INTERCITY_BUS: "🚌",
-  SHARE_TAXI: "🚐",
-  TRAIN: "🚆",
-  SUBWAY: "🚇",
-  METRO_RAIL: "🚇",
-  TRAM: "🚊",
-  LIGHT_RAIL: "🚊",
-  RAIL: "🚆",
-  HEAVY_RAIL: "🚆",
-  COMMUTER_TRAIN: "🚆",
-  HIGH_SPEED_TRAIN: "🚄",
-  LONG_DISTANCE_TRAIN: "🚆",
-  MONORAIL: "🚝",
-  FERRY: "⛴️",
-  CABLE_CAR: "🚡",
-  GONDOLA_LIFT: "🚡",
-  FUNICULAR: "🚡",
+const VEHICLE_ICONS: Record<string, React.ReactNode> = {
+  BUS:              <Bus size={12} />,
+  INTERCITY_BUS:    <Bus size={12} />,
+  SHARE_TAXI:       <Bus size={12} />,
+  TRAIN:            <Train size={12} />,
+  SUBWAY:           <Train size={12} />,
+  METRO_RAIL:       <Train size={12} />,
+  COMMUTER_TRAIN:   <Train size={12} />,
+  HIGH_SPEED_TRAIN: <Train size={12} />,
+  LONG_DISTANCE_TRAIN: <Train size={12} />,
+  HEAVY_RAIL:       <Train size={12} />,
+  RAIL:             <Train size={12} />,
+  TRAM:             <TramFront size={12} />,
+  LIGHT_RAIL:       <TramFront size={12} />,
+  MONORAIL:         <TramFront size={12} />,
+  FERRY:            <Ship size={12} />,
+  CABLE_CAR:        <CableCar size={12} />,
+  GONDOLA_LIFT:     <CableCar size={12} />,
+  FUNICULAR:        <CableCar size={12} />,
 };
 
-// picks a readable text colour (black or white) against a given hex
-// background so line chips stay legible regardless of the line's brand colour
 function readableTextColour(hex?: string): string {
   if (!hex) return "#FFFFFF";
   const clean = hex.replace("#", "");
@@ -41,7 +49,7 @@ function SegmentChip({ segment }: { segment: TransitSegment }) {
   if (segment.travelMode === "WALK") {
     return (
       <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-50 rounded-full px-2 py-1 whitespace-nowrap">
-        <span>🚶</span>
+        <Footprints size={12} />
         <span>{segment.durationText}</span>
       </div>
     );
@@ -49,7 +57,7 @@ function SegmentChip({ segment }: { segment: TransitSegment }) {
 
   const bg = segment.lineColor ?? "#6B7280";
   const fg = segment.lineTextColor ?? readableTextColour(bg);
-  const icon = VEHICLE_ICONS[segment.vehicleType ?? ""] ?? "🚌";
+  const icon = VEHICLE_ICONS[segment.vehicleType ?? ""] ?? <Bus size={12} />;
   const label = segment.lineShortName || segment.lineName || "Transit";
 
   return (
@@ -62,7 +70,7 @@ function SegmentChip({ segment }: { segment: TransitSegment }) {
           : segment.lineName ?? label
       }
     >
-      <span>{icon}</span>
+      <span className="flex-none">{icon}</span>
       <span>{label}</span>
     </div>
   );
@@ -72,7 +80,7 @@ function TransitRow({ leg }: { leg?: ModeLeg }) {
   if (!leg) {
     return (
       <div className="flex items-center gap-1.5 text-sm text-gray-400 bg-gray-50 rounded-lg px-2.5 py-1.5">
-        <span>🚌</span>
+        <Bus size={14} className="shrink-0" />
         <span>Transit: —</span>
       </div>
     );
@@ -85,7 +93,7 @@ function TransitRow({ leg }: { leg?: ModeLeg }) {
   if (!hasUsableRoute) {
     return (
       <div className="flex items-center gap-1.5 text-sm text-gray-400 bg-gray-50 rounded-lg px-2.5 py-1.5">
-        <span>🚌</span>
+        <Bus size={14} className="shrink-0" />
         <span>No transit route available</span>
       </div>
     );
@@ -113,24 +121,23 @@ function ModeRow({
   label,
   leg,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   leg?: ModeLeg;
 }) {
   if (!leg) {
     return (
       <div className="flex items-center gap-1.5 text-sm text-gray-400 bg-gray-50 rounded-lg px-2.5 py-1.5">
-        <span>{icon}</span>
+        <span className="flex-none">{icon}</span>
         <span>{label}: —</span>
       </div>
     );
   }
 
-  // ZERO_RESULTS or failed request - no usable route for this mode
   if (leg.durationText === "—" || leg.distanceText === "—") {
     return (
       <div className="flex items-center gap-1.5 text-sm text-gray-400 bg-gray-50 rounded-lg px-2.5 py-1.5">
-        <span>{icon}</span>
+        <span className="flex-none">{icon}</span>
         <span>No {label.toLowerCase()} route available</span>
       </div>
     );
@@ -138,7 +145,7 @@ function ModeRow({
 
   return (
     <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg px-2.5 py-1.5">
-      <span className="text-base">{icon}</span>
+      <span className="flex-none">{icon}</span>
       <span>{leg.durationText}</span>
       <span className="text-gray-400">·</span>
       <span className="text-gray-500">{leg.distanceText}</span>
@@ -187,15 +194,13 @@ function TripDetailsPanel({
             </div>
 
             {dayNotes[dayNumber] && (
-              <p className="text-base text-gray-700 mb-3 leading-relaxed">
+              <p className="text-base text-gray-700 mb-5 leading-relaxed pb-2 border-b border-gray-100">
                 {dayNotes[dayNumber]}
               </p>
             )}
 
             {attractions.length === 0 ? (
-              <p className="text-sm text-gray-400">
-                No attractions planned yet.
-              </p>
+              <p className="text-sm text-gray-400">No attractions planned yet.</p>
             ) : (
               <div className="flex flex-col">
                 {attractions.map((attraction, i) => (
@@ -208,12 +213,8 @@ function TripDetailsPanel({
                         {i + 1}
                       </div>
                       <div className="flex-1 pb-1">
-                        <p className="font-semibold text-sm">
-                          {attraction.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {attraction.address}
-                        </p>
+                        <p className="font-semibold text-sm">{attraction.name}</p>
+                        <p className="text-xs text-gray-500">{attraction.address}</p>
                         <p className="text-xs text-gray-600">
                           {attraction.rating} ⭐ ({attraction.reviews})
                         </p>
@@ -227,12 +228,12 @@ function TripDetailsPanel({
                           {legs ? (
                             <>
                               <ModeRow
-                                icon="🚶"
+                                icon={<Footprints size={14} />}
                                 label="Walking"
                                 leg={legs.walking[i]}
                               />
                               <ModeRow
-                                icon="🚗"
+                                icon={<Car size={14} />}
                                 label="Driving"
                                 leg={legs.driving[i]}
                               />

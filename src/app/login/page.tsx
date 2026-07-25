@@ -1,13 +1,9 @@
-import Link from "next/link";
 import LoginForm from "@/components/login/LoginForm";
 
-function Login() {
+export default function Login() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-start pt-[20vh] bg-[#F9F9F9]">
-      <h1 className="color-black text-4xl font-bold">Welcome Back!</h1>
+    <main className="flex-1 bg-gradient-to-br from-white via-gray-50 to-red-50 flex items-center justify-center px-4 py-12 overflow-y-auto">
       <LoginForm />
     </main>
   );
 }
-
-export default Login;

@@ -103,6 +103,17 @@ export default function TripTable() {
       )}
       {tripLoading ? (
         <p className="text-gray-500 mt-2 text-lg">Loading...</p>
+      ) : trips?.length === 0 ? (
+        <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-5xl mb-4">✈️</p>
+          <h3 className="text-lg font-semibold text-gray-600 mb-1">No trips yet</h3>
+          <p className="text-gray-400 text-sm mb-5">Start planning your first adventure</p>
+          <Link href="/new-trip">
+            <button className="bg-red-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-red-600 transition-colors">
+              + Plan New Trip
+            </button>
+          </Link>
+        </div>
       ) : (
         trips?.map((trip) => (
           <div key={trip.id} className="relative group">

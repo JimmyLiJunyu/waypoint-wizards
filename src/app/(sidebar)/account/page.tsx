@@ -20,6 +20,7 @@ function AccountPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   if (isUserLoading) return <p>Loading profile...</p>;
   if (!user) return <p>Server error.</p>;
@@ -27,6 +28,8 @@ function AccountPage() {
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !user) return
+
+    setImagePreview(URL.createObjectURL(file))
 
     const formData = new FormData()
     formData.append("file", file)
@@ -36,7 +39,7 @@ function AccountPage() {
       body: formData,
     })
 
-    if (!res.ok) { setError("Image upload failed"); return }
+    if (!res.ok) { setError("Image upload failed"); setImagePreview(null); return }
 
     const { publicUrl } = await res.json()
     setImage(publicUrl)
@@ -80,8 +83,8 @@ function AccountPage() {
   return (
     <main className="h-full overflow-y-auto bg-gray-50 flex items-start justify-center pt-12 px-4 font-sans text-slate-900">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-        <div className="bg-red-500 p-8 flex flex-col items-center border-b border-slate-100">
-          <div className="relative size-24 rounded-full overflow-hidden bg-white border-4 border-white shadow-md mb-4">
+        <div className="bg-gray-900 p-8 flex flex-col items-center border-b border-gray-700">
+          <div className="relative size-24 rounded-full overflow-hidden bg-white border-4 border-gray-700 shadow-md mb-4">
             {user?.imageUrl ? (
               <Image
                 src={user.imageUrl}
@@ -96,7 +99,7 @@ function AccountPage() {
             )}
           </div>
           <h1 className="text-xl font-bold text-white">Account Details</h1>
-          <p className="text-gray-300 text-sm">
+          <p className="text-gray-400 text-sm">
             Update your personal information
           </p>
         </div>
@@ -124,7 +127,7 @@ function AccountPage() {
               type="text"
               name="name"
               placeholder={user.name || "Your Name"}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all outline-none bg-slate-50/50 focus:bg-white text-slate-800"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-red-400 focus:ring-4 focus:ring-red-400/10 transition-all outline-none bg-slate-50/50 focus:bg-white text-slate-800"
             />
           </div>
 
@@ -139,7 +142,7 @@ function AccountPage() {
               name="email"
               required
               placeholder={user.email || "Email"}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all outline-none bg-slate-50/50 focus:bg-white text-slate-800"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-red-400 focus:ring-4 focus:ring-red-400/10 transition-all outline-none bg-slate-50/50 focus:bg-white text-slate-800"
             />
           </div>
           <div className="space-y-1.5">
@@ -151,7 +154,12 @@ function AccountPage() {
               accept="image/*"
               onChange={handleImageUpload}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:bg-slate-900 file:text-white hover:file:bg-slate-700 cursor-pointer"/>
-              {image && <p className="text-xs text-green-600 mt-1">Image ready to save</p>}
+              {imagePreview && (
+                <div className="flex items-center gap-3 mt-2">
+                  <img src={imagePreview} alt="Preview" className="size-12 rounded-full object-cover border-2 border-red-400" />
+                  <p className="text-xs text-green-600">New photo ready to save</p>
+                </div>
+              )}
           </div>
 
           <button

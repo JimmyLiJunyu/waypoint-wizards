@@ -136,7 +136,7 @@ function TripPhotos({
         disabled={publishing}
         className={`flex items-center justify-center gap-2 py-2 rounded-full text-sm font-semibold transition-colors disabled:opacity-50 ${
           post?.published
-            ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
             : "bg-red-500 text-white hover:bg-red-600"
         }`}
       >

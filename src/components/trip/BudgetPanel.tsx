@@ -49,6 +49,7 @@ export default function BudgetPanel({
   const [submitting, setSubmitting] = useState(false);
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmingSettleKey, setConfirmingSettleKey] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/itinerary/${itineraryId}/expenses`)
@@ -153,36 +154,45 @@ export default function BudgetPanel({
       {/* Add expense */}
       <form onSubmit={addExpense} className="bg-white border rounded-xl p-4 flex flex-col gap-3">
         <h3 className="font-bold text-base">Add Expense</h3>
-        <input
-          type="text"
-          placeholder="Description (e.g. Dinner)"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-1 focus:ring-red-400"
-          required
-        />
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Description</label>
           <input
-            type="number"
-            placeholder="Amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm flex-1 outline-none focus:ring-1 focus:ring-red-400"
-            min="0"
-            step="0.01"
+            type="text"
+            placeholder="e.g. Dinner, Hotel, Taxi"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="border rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-1 focus:ring-red-400"
             required
           />
-          <select
-            value={payerId}
-            onChange={(e) => setPayerId(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm flex-1 outline-none"
-          >
+        </div>
+        <div className="flex gap-2">
+          <div className="flex flex-col gap-1 flex-1">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount ($)</label>
+            <input
+              type="number"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-1 focus:ring-red-400"
+              min="0"
+              step="0.01"
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1 flex-1">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Paid by</label>
+            <select
+              value={payerId}
+              onChange={(e) => setPayerId(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm w-full outline-none"
+            >
             {collaborators.map((c) => (
               <option key={c.userId} value={c.userId}>
                 {c.userId === currentUserId ? "You" : c.user.name}
               </option>
             ))}
-          </select>
+            </select>
+          </div>
         </div>
         <p className="text-xs text-gray-400">
           Split equally among all {collaborators.length} member{collaborators.length !== 1 ? "s" : ""}
@@ -276,12 +286,29 @@ export default function BudgetPanel({
                       {s.settled ? (
                         <span className="text-green-500 font-semibold">Settled ✓</span>
                       ) : (s.userId === currentUserId || exp.payerId === currentUserId) ? (
-                        <button
-                          onClick={() => settle(exp.id, s.userId)}
-                          className="text-green-600 hover:text-green-700 font-semibold"
-                        >
-                          Settle
-                        </button>
+                        confirmingSettleKey === `${exp.id}-${s.userId}` ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setConfirmingSettleKey(null)}
+                              className="text-xs text-gray-400 hover:text-gray-600 font-semibold"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => { settle(exp.id, s.userId); setConfirmingSettleKey(null); }}
+                              className="text-xs text-green-600 hover:text-green-700 font-semibold"
+                            >
+                              Confirm
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmingSettleKey(`${exp.id}-${s.userId}`)}
+                            className="text-green-600 hover:text-green-700 font-semibold"
+                          >
+                            Settle
+                          </button>
+                        )
                       ) : null}
                     </div>
                   ))}

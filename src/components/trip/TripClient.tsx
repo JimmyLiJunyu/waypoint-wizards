@@ -370,6 +370,10 @@ function TripInner({
   };
 
   useEffect(() => {
+    localStorage.setItem('lastTripPath', `${window.location.pathname}${window.location.search}`);
+  }, [itineraryId]);
+
+  useEffect(() => {
     const geocode = async () => {
       const res = await fetch(
         `/api/geocode?destination=${encodeURIComponent(destination)}`
@@ -619,7 +623,7 @@ function TripInner({
           }
           onPointerLeave={() => room.updatePresence({ cursor: null })}
         >
-          <div className="fixed top-3 left-16 z-40 flex items-center gap-3 max-w-[calc(100vw-5rem)] overflow-x-auto">
+          <div className="fixed top-3 left-16 z-40 flex items-center gap-3 max-w-[calc(100vw-5rem)] overflow-x-auto py-1">
             <CollaboratorPanel
               itineraryId={itineraryId}
               currentUserId={currentUserId}
@@ -679,7 +683,7 @@ function TripInner({
               ))}
             </div>
 
-            <h1 className="text-2xl md:text-4xl font-bold">
+            <h1 className="text-2xl md:text-4xl font-bold mt-4">
               The Next Station is {destination}
             </h1>
             <p className="text-gray-500 mt-1 text-sm md:text-base">

@@ -191,6 +191,13 @@ function TripInner({
     driving: string | null;
     transit: ColouredPolylineSegment[] | null;
   }>({ walking: null, driving: null, transit: null });
+  const [allDayPolylines, setAllDayPolylines] = useState<{
+    [day: number]: {
+      walking: string | null;
+      driving: string | null;
+      transit: ColouredPolylineSegment[] | null;
+    };
+  }>({});
   const [mapRouteMode, setMapRouteMode] = useState<"walking" | "driving" | "transit">("driving");
 
   // useRoom gives us a stable updatePresence that doesn't re-render this component.
@@ -410,7 +417,7 @@ function TripInner({
 
       if (daysToFetch.length === 0) {
         setDayLegs({});
-        setDayPolylines({ walking: null, driving: null, transit: null });
+        setAllDayPolylines({});
         return;
       }
 
@@ -469,26 +476,27 @@ function TripInner({
       );
 
       const newLegs: typeof dayLegs = {};
-      let selectedPolylines: {
-        walking: string | null;
-        driving: string | null;
-        transit: ColouredPolylineSegment[] | null;
-      } = { walking: null, driving: null, transit: null };
+      const newAllPolylines: typeof allDayPolylines = {};
 
       for (const r of legResults) {
         newLegs[r.day] = r.legs;
-        if (r.day === selectedDay) {
-          selectedPolylines = r.polylines;
-        }
+        newAllPolylines[r.day] = r.polylines;
       }
 
       setDayLegs(newLegs);
-      setDayPolylines(selectedPolylines);
+      setAllDayPolylines(newAllPolylines);
     }, 500);
 
     return () => clearTimeout(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itineraryKey, selectedDay]);
+  }, [itineraryKey]);
+
+  // Instantly swap displayed polylines when the user switches days (no refetch needed)
+  useEffect(() => {
+    setDayPolylines(
+      allDayPolylines[selectedDay] ?? { walking: null, driving: null, transit: null }
+    );
+  }, [selectedDay, allDayPolylines]);
 
   useEffect(() => {
     if (!selectedAttraction) return;

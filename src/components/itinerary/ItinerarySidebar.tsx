@@ -71,7 +71,11 @@ function ItinerarySidebar({
               disabled={isGenerating}
               className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isGenerating ? "Generating..." : "✨ AI Generate"}
+              {isGenerating ? (
+                <><span className="sm:hidden">...</span><span className="hidden sm:inline">Generating...</span></>
+              ) : (
+                <><span className="sm:hidden">✨ AI</span><span className="hidden sm:inline">✨ AI Generate</span></>
+              )}
             </button>
             {dropdownOpen && !isGenerating && (
               <div className="absolute right-0 top-full mt-1.5 w-52 bg-white border rounded-xl shadow-xl z-50 overflow-hidden">

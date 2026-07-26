@@ -57,7 +57,7 @@ function DayCard({ day, date, attractions, onRemove, note, onUpdateNote } : {
                 onChange={(e) => setLocalNote(e.target.value)}
                 placeholder={`Add notes for Day ${day}...`}
                 rows={2}
-                className='mt-3 w-full text-sm text-gray-700 placeholder-gray-400 border border-gray-200 rounded-lg px-3 py-2 resize-none outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 transition-colors'
+                className='mt-3 w-full text-sm text-gray-700 placeholder-gray-400 border border-gray-200 rounded-lg px-3 py-2 resize-none outline-none focus:ring-1 focus:ring-red-300 focus:border-red-300 transition-colors'
             />
         </div>
     )

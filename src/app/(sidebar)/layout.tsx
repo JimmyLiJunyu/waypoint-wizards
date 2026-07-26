@@ -12,7 +12,7 @@ export default function SidebarGroupLayout({
     <UserProvider>
       <div className="relative h-screen overflow-hidden flex w-full bg-[#F9F9F9]">
           <Sidebar/>
-          <div className="flex-1 flex flex-col min-w-0 overflow-hidden pl-14 pt-16 lg:p-8">
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden pt-16 md:pl-14 lg:p-8">
               <main className="w-full h-full overflow-hidden">
                   {children}
               </main>

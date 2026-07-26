@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Trash2, Upload, Share2 } from "lucide-react";
+import { Trash2, Upload, Share2, Camera } from "lucide-react";
 
 type TripPhoto = {
   id: string;
@@ -136,7 +136,7 @@ function TripPhotos({
         disabled={publishing}
         className={`flex items-center justify-center gap-2 py-2 rounded-full text-sm font-semibold transition-colors disabled:opacity-50 ${
           post?.published
-            ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
             : "bg-red-500 text-white hover:bg-red-600"
         }`}
       >
@@ -151,21 +151,39 @@ function TripPhotos({
       <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-sm">Group Photos</h2>
-          <label className="cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
-            <Upload className="size-3.5" />
-            {uploadingGroup ? "Uploading..." : "Add"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={uploadingGroup}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleUploadGroup(file);
-                e.target.value = "";
-              }}
-            />
-          </label>
+          <div className="flex items-center gap-3">
+            <label className="md:hidden cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
+              <Camera className="size-3.5" />
+              {uploadingGroup ? "Uploading..." : "Camera"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                disabled={uploadingGroup}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadGroup(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <label className="cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
+              <Upload className="size-3.5" />
+              {uploadingGroup ? "Uploading..." : "Add"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingGroup}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadGroup(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {groupPhotos.map((photo) => (
@@ -177,7 +195,7 @@ function TripPhotos({
               {photo.uploadedBy === currentUserId && (
                 <button
                   onClick={() => handleDeleteGroup(photo.id)}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                 >
                   <Trash2 className="size-3" />
                 </button>
@@ -193,21 +211,39 @@ function TripPhotos({
       <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-semibold text-sm">My Photos</h2>
-          <label className="cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
-            <Upload className="size-3.5" />
-            {uploadingMine ? "Uploading..." : "Add"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={uploadingMine}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleUploadMine(file);
-                e.target.value = "";
-              }}
-            />
-          </label>
+          <div className="flex items-center gap-3">
+            <label className="md:hidden cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
+              <Camera className="size-3.5" />
+              {uploadingMine ? "Uploading..." : "Camera"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                disabled={uploadingMine}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadMine(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <label className="cursor-pointer text-xs font-semibold text-red-500 hover:text-red-600 flex items-center gap-1">
+              <Upload className="size-3.5" />
+              {uploadingMine ? "Uploading..." : "Add"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploadingMine}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadMine(file);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {(post?.photo ?? []).map((photo) => (
@@ -218,7 +254,7 @@ function TripPhotos({
               <Image src={photo.url} alt="My photo" fill className="object-cover" />
               <button
                 onClick={() => handleDeleteMine(photo.id)}
-                className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white md:opacity-0 md:group-hover:opacity-100 transition-opacity"
               >
                 <Trash2 className="size-3" />
               </button>

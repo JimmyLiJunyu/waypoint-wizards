@@ -108,7 +108,7 @@ function TripForm() {
         />
       </div>
       <button
-        className="bg-red-500 text-white p-3 rounded-full w-1/3 font-semibold self-center mt-4"
+        className="bg-red-500 text-white p-3 rounded-full w-full sm:w-1/3 font-semibold self-center mt-4"
         type="button" onClick={handleSubmit} disabled={isLoading}
       >
         {isLoading ? "Loading..." : "Plan the Trip"}

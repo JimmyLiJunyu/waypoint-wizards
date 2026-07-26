@@ -146,13 +146,33 @@ function MapInner({
       path.forEach((point) => bounds.extend(point));
     });
 
-    // center the map on the combined bounds so the whole route is visible
-    map.fitBounds(bounds, 80);
+    // Animate pan from current centre to new route centre, then fit bounds for zoom
+    const startCenter = map.getCenter()!;
+    const targetCenter = bounds.getCenter();
+    const DURATION = 650;
+    const t0 = performance.now();
+    let raf: number;
+
+    const step = (now: number) => {
+      const raw = Math.min((now - t0) / DURATION, 1);
+      const ease = 1 - Math.pow(1 - raw, 3); // ease-out cubic
+      map.setCenter({
+        lat: startCenter.lat() + (targetCenter.lat() - startCenter.lat()) * ease,
+        lng: startCenter.lng() + (targetCenter.lng() - startCenter.lng()) * ease,
+      });
+      if (raw < 1) {
+        raf = requestAnimationFrame(step);
+      } else {
+        map.fitBounds(bounds, 80);
+      }
+    };
+    raf = requestAnimationFrame(step);
 
     setRouteOverlays(newOverlays);
 
     return () => {
       casings.forEach((casing) => casing.setMap(null));
+      cancelAnimationFrame(raf);
     };
   }, [map, isLoaded, routePolyline, routeColour]);
 

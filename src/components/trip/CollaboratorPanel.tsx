@@ -173,7 +173,7 @@ export default function CollaboratorPanel({
       {/* Invite modal */}
       {showInvite && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-96 max-h-[70vh] flex flex-col">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-96 max-w-[calc(100vw-2rem)] max-h-[70vh] flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg">Invite a Friend</h3>
               <button

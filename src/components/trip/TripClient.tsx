@@ -631,7 +631,7 @@ function TripInner({
           }
           onPointerLeave={() => room.updatePresence({ cursor: null })}
         >
-          <div className="fixed top-3 left-16 z-40 flex items-center gap-3 max-w-[calc(100vw-5rem)] overflow-x-auto py-1">
+          <div className="fixed top-3 left-16 z-40 flex items-center gap-3 max-w-[calc(100vw-5rem)] py-1">
             <CollaboratorPanel
               itineraryId={itineraryId}
               currentUserId={currentUserId}

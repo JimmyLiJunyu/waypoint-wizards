@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
+import { calculateBalances } from "@/lib/balances";
 
 type CollaboratorUser = { id: string; name: string; imageUrl: string | null };
 type CollaboratorRecord = { id: number; role: string; userId: string; user: CollaboratorUser };
@@ -22,14 +23,6 @@ type Expense = {
   payerId: string;
   payer: { id: string; name: string };
   splits: Split[];
-};
-
-type Balance = {
-  fromId: string;
-  fromName: string;
-  toId: string;
-  toName: string;
-  amount: number;
 };
 
 export default function BudgetPanel({
@@ -120,32 +113,7 @@ export default function BudgetPanel({
     exp.splits.forEach((split) => { userMap[split.userId] = split.user.name; });
   });
 
-  function calculateBalances(): Balance[] {
-    const net: { [key: string]: number } = {};
-    // UUIDs contain hyphens, so joining/splitting on "-" corrupts the pair — use "|" instead.
-    const SEP = "|";
-
-    expenses.forEach((exp) => {
-      exp.splits.forEach((split) => {
-        if (split.settled || split.userId === exp.payerId) return;
-        const [a, b] = [exp.payerId, split.userId].sort();
-        const sign = exp.payerId === a ? 1 : -1;
-        const key = `${a}${SEP}${b}`;
-        net[key] = (net[key] ?? 0) + sign * split.share;
-      });
-    });
-
-    return Object.entries(net)
-      .filter(([, amt]) => Math.abs(amt) > 0.005)
-      .map(([key, amt]) => {
-        const [a, b] = key.split(SEP);
-        return amt > 0
-          ? { fromId: b, fromName: userMap[b] ?? b, toId: a, toName: userMap[a] ?? a, amount: amt }
-          : { fromId: a, fromName: userMap[a] ?? a, toId: b, toName: userMap[b] ?? b, amount: -amt };
-      });
-  }
-
-  const balances = calculateBalances();
+  const balances = calculateBalances(expenses);
   const displayName = (id: string) => id === currentUserId ? "You" : (userMap[id] ?? id);
 
   return (
@@ -216,7 +184,7 @@ export default function BudgetPanel({
                 <span className="font-semibold">{displayName(b.fromId)}</span>
                 {" owe"}
                 {b.fromId === currentUserId ? "" : "s"}{" "}
-                <span className="font-semibold">{b.toId === currentUserId ? "you" : b.toName}</span>
+                <span className="font-semibold">{b.toId === currentUserId ? "you" : displayName(b.toId)}</span>
               </span>
               <span className="font-bold text-red-500">${b.amount.toFixed(2)}</span>
             </div>
